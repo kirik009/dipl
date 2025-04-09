@@ -30,7 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, User } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Difficulty } from '@shared/schema';
 
 const profileSchema = z.object({
@@ -38,7 +38,6 @@ const profileSchema = z.object({
     message: 'Username must be at least 3 characters.',
   }),
   difficultyLevel: z.enum([Difficulty.BEGINNER, Difficulty.INTERMEDIATE, Difficulty.ADVANCED]),
-  interfaceLanguage: z.enum(['english', 'russian']),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -51,13 +50,13 @@ const Profile: FC = () => {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       username: user?.username || '',
-      difficultyLevel: (user?.difficultyLevel as Difficulty) || Difficulty.BEGINNER,
-      interfaceLanguage: user?.interfaceLanguage || 'english',
+      difficultyLevel: (user?.level as Difficulty) || Difficulty.BEGINNER,
+  
     },
     values: {
       username: user?.username || '',
-      difficultyLevel: (user?.difficultyLevel as Difficulty) || Difficulty.BEGINNER,
-      interfaceLanguage: user?.interfaceLanguage || 'english',
+      difficultyLevel: (user?.level as Difficulty) || Difficulty.BEGINNER,
+      
     },
   });
   
@@ -151,32 +150,6 @@ const Profile: FC = () => {
                     )}
                   />
                   
-                  <FormField
-                    control={form.control}
-                    name="interfaceLanguage"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Interface Language</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
-                          defaultValue={field.value}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select language" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="english">English</SelectItem>
-                            <SelectItem value="russian">Russian</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
                   <div className="pt-4 text-right">
                     <Button 
                       type="submit" 
@@ -211,7 +184,7 @@ const Profile: FC = () => {
                 <h3 className="text-lg font-medium">{user.username}</h3>
                 <p className="text-sm text-gray-500 capitalize">{user.role}</p>
                 <div className="mt-4 bg-primary-50 px-4 py-2 rounded-full text-sm font-medium text-primary capitalize">
-                  {user.difficultyLevel} Level
+                  {user.level} Level
                 </div>
               </div>
             </CardContent>

@@ -14,20 +14,30 @@ import ProfilePage from "@/pages/profile-page";
 import AdminDashboard from "@/pages/admin/dashboard";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./lib/protected-route";
+import TasksPage from "./pages/tasks-page";
+import TaskEditor from "./pages/admin/task-editor";
+import TaskPage from "./pages/task-page";
+import TaskResults from "./pages/task-results";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/exercises/:id" component={ExercisePage} />
-      <ProtectedRoute path="/results/:id" component={ExerciseResults} />
+      <ProtectedRoute path="/tasks/:taskId/prog/:progressId/exercises/:exerciseId/seq/:seq" component={ExercisePage} />
+      <ProtectedRoute path="/tasks" component={TasksPage} />
+      <ProtectedRoute path="/tasks/:id" component={TaskPage} />
+      <ProtectedRoute path="/tasks/:taskId/prog/:progressId/exercises/:exerciseId/seq/:seq/results" component={ExerciseResults} />
+      <ProtectedRoute path="/tasks/:taskId/prog/:progressId/results" component={TaskResults} />
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/admin" component={AdminDashboard} />
       <ProtectedRoute path="/admin/users" component={AdminDashboard} />
       <ProtectedRoute path="/admin/exercises" component={AdminDashboard} />
       <ProtectedRoute path="/admin/exercises/new" component={AdminDashboard} />
+      <ProtectedRoute path="/admin/tasks" component={TaskPage} />
+      <ProtectedRoute path="/admin/tasks/new" component={TaskEditor} />
       <ProtectedRoute path="/admin/exercises/:id/edit" component={AdminDashboard} />
+      <ProtectedRoute path="/admin/tasks/:id/edit" component={TaskEditor} />
       <Route component={NotFound} />
     </Switch>
   );

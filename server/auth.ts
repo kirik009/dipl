@@ -2,14 +2,13 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser, loginUserSchema, registerUserSchema } from "@shared/schema";
 import createMemoryStore from "memorystore";
+import { z } from "zod";
+import * as crypto from "crypto";
 
 const MemoryStore = createMemoryStore(session);
-const scryptAsync = promisify(scrypt);
 
 declare global {
   namespace Express {
@@ -17,17 +16,21 @@ declare global {
   }
 }
 
-async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+function hashPassword(password: string) {
+  
+  return crypto.createHash("sha256").update(password).digest("hex");;
 }
 
-async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+// Простое сравнение хешей
+function comparePasswords(supplied: string, stored: string) {
+  try {
+    // Получаем хеш от введенного пароля
+    const suppliedHash = hashPassword(supplied);
+    return suppliedHash === stored;
+  } catch (error) {
+    console.error("Error comparing passwords:", error);
+    return false;
+  }
 }
 
 export function setupAuth(app: Express) {
@@ -52,7 +55,7 @@ export function setupAuth(app: Express) {
     new LocalStrategy(async (username, password, done) => {
       try {
         const user = await storage.getUserByUsername(username);
-        if (!user || !(await comparePasswords(password, user.password))) {
+        if (!user || !comparePasswords(password, user.password)) {
           return done(null, false);
         } else {
           return done(null, user);
@@ -84,7 +87,7 @@ export function setupAuth(app: Express) {
 
       const user = await storage.createUser({
         username: validatedData.username,
-        password: await hashPassword(validatedData.password),
+        password: hashPassword(validatedData.password),
         fullName: validatedData.fullName,
         role: validatedData.role || "user",
         level: validatedData.level || "beginner",
@@ -97,7 +100,7 @@ export function setupAuth(app: Express) {
         if (err) return next(err);
         res.status(201).json(userWithoutPassword);
       });
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
           message: "Validation error", 
@@ -109,24 +112,21 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    try {
-      const validatedData = loginUserSchema.parse(req.body);
-      
+    try {      
       passport.authenticate("local", (err: Error, user: SelectUser) => {
         if (err) return next(err);
         if (!user) {
-          return res.status(401).json({ message: "Invalid username or password" });
+          return res.status(401).json({ message: `Invalid username or password` });
         }
         
         req.login(user, (loginErr) => {
           if (loginErr) return next(loginErr);
-          
-          // Remove password from response
+     
           const { password, ...userWithoutPassword } = user;
           res.status(200).json(userWithoutPassword);
         });
       })(req, res, next);
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
           message: "Validation error", 

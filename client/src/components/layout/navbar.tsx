@@ -15,10 +15,10 @@ export function Navbar() {
   };
 
   const menuItems = [
-    { href: "/", label: "Home" },
-    { href: "/exercises/1", label: "Exercises", protected: true },
-    { href: "/profile", label: "Profile", protected: true },
-    { href: "/admin", label: "Admin Panel", admin: true }
+    { href: "/", label: "Главная" },
+    { href: "/tasks", label: "Упражнения", protected: true },
+    { href: "/profile", label: "Профиль", protected: true },
+    { href: "/admin", label: "Панель администратора", admin: true }
   ];
 
   const filteredMenuItems = menuItems.filter(item => {
@@ -56,14 +56,14 @@ export function Navbar() {
           {user ? (
             <>
               <span className="hidden md:inline text-sm text-gray-600">
-                Hello, {user.fullName}
+                Привет, {user.fullName}
               </span>
               <Button 
                 variant="outline" 
                 onClick={handleLogout}
                 disabled={logoutMutation.isPending}
               >
-                Log out
+                Выйти
               </Button>
             </>
           ) : (
@@ -72,12 +72,12 @@ export function Navbar() {
                 variant="ghost" 
                 asChild
               >
-                <Link href="/auth">Log in</Link>
+                <Link href="/auth">Войти</Link>
               </Button>
               <Button 
                 asChild
               >
-                <Link href="/auth">Sign up</Link>
+                <Link href="/auth">Зарегистрироваться</Link>
               </Button>
             </>
           )}

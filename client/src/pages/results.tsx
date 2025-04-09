@@ -7,8 +7,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Exercise } from '@shared/schema';
 
 const Results: FC = () => {
-  const { id } = useParams();
-  const exerciseId = parseInt(id);
+  const { taskId, progressId, exerciseId } = useParams<{taskId : string, progressId: string, exerciseId: string}>();
+ 
   const [, setLocation] = useLocation();
   
   const [userSentence, setUserSentence] = useState<string>('');
@@ -18,9 +18,9 @@ const Results: FC = () => {
   
   // Fetch the exercise data
   const { data: exercise } = useQuery<Exercise>({
-    queryKey: [`/api/exercises/${id}`],
+    queryKey: [`/api/exercises/${exerciseId}`],
     queryFn: async () => {
-      const res = await fetch(`/api/exercises/${id}`);
+      const res = await fetch(`/api/exercises/${exerciseId}`);
       if (!res.ok) throw new Error('Failed to fetch exercise');
       return res.json();
     },
@@ -30,7 +30,7 @@ const Results: FC = () => {
     // Get results from localStorage
     const storedExerciseId = localStorage.getItem('lastExerciseId');
     
-    if (storedExerciseId === id) {
+    if (storedExerciseId === exerciseId) {
       const storedUserSentence = localStorage.getItem('lastUserSentence') || '';
       const storedCorrectSentence = localStorage.getItem('lastCorrectSentence') || '';
       const storedExplanation = localStorage.getItem('lastExplanation') || '';
@@ -43,13 +43,13 @@ const Results: FC = () => {
     } else if (exercise) {
       // If no data in localStorage but we have the exercise, show default data
       setCorrectSentence(exercise.correctSentence);
-      setExplanation(exercise.explanation);
+      setExplanation(exercise.grammarExplanation!);
       setIsCorrect(false);
     } else {
       // If we don't have data, redirect to dashboard
       setLocation('/dashboard');
     }
-  }, [id, exercise, setLocation]);
+  }, [exerciseId, exercise, setLocation]);
   
   const handleTryAgain = () => {
     setLocation(`/exercise/${exerciseId}`);

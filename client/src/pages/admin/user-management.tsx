@@ -170,10 +170,10 @@ export default function UserManagement() {
               <SelectValue placeholder="All Roles" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="user">Student</SelectItem>
-              <SelectItem value="teacher">Teacher</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="all">Все роли</SelectItem>
+              <SelectItem value="user">Студент</SelectItem>
+              <SelectItem value="teacher">Преподаватель</SelectItem>
+              <SelectItem value="admin">Администратор</SelectItem>
             </SelectContent>
           </Select>
 
@@ -181,7 +181,7 @@ export default function UserManagement() {
             <DialogTrigger asChild>
               <Button>
                 <UserPlus className="mr-2 h-4 w-4" />
-                Add User
+                Добавить пользователя
               </Button>
             </DialogTrigger>
             <DialogContent>
@@ -195,7 +195,7 @@ export default function UserManagement() {
                 <div className="grid grid-cols-1 gap-4">
                   <div className="space-y-2">
                     <label htmlFor="fullName" className="text-sm font-medium">
-                      Full Name
+                      Полное имя
                     </label>
                     <Input id="fullName" placeholder="John Doe" />
                   </div>
@@ -207,7 +207,7 @@ export default function UserManagement() {
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="role" className="text-sm font-medium">
-                      Role
+                      Роль
                     </label>
                     <Select defaultValue="user">
                       <SelectTrigger>
@@ -237,11 +237,11 @@ export default function UserManagement() {
         <table className="min-w-full bg-white">
           <thead className="bg-gray-100">
             <tr>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Имя</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Никнейм</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Уровень</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -380,7 +380,7 @@ export default function UserManagement() {
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="edit-username" className="text-sm font-medium">
-                    Username
+                    Никнейм
                   </label>
                   <Input
                     id="edit-username"
@@ -392,7 +392,7 @@ export default function UserManagement() {
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="edit-role" className="text-sm font-medium">
-                    Role
+                    Роль
                   </label>
                   <Select
                     value={userToEdit.role}
@@ -404,15 +404,15 @@ export default function UserManagement() {
                       <SelectValue placeholder="Select role" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="user">Student</SelectItem>
-                      <SelectItem value="teacher">Teacher</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="user">Студент</SelectItem>
+                      <SelectItem value="teacher">Преподаватель</SelectItem>
+                      <SelectItem value="admin">Администратор</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="edit-level" className="text-sm font-medium">
-                    Level
+                    Уровень
                   </label>
                   <Select
                     value={userToEdit.level}
@@ -424,9 +424,9 @@ export default function UserManagement() {
                       <SelectValue placeholder="Select level" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="beginner">Beginner</SelectItem>
-                      <SelectItem value="intermediate">Intermediate</SelectItem>
-                      <SelectItem value="advanced">Advanced</SelectItem>
+                      <SelectItem value="beginner">Начинающий</SelectItem>
+                      <SelectItem value="intermediate">Средний</SelectItem>
+                      <SelectItem value="advanced">Продвинутый</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

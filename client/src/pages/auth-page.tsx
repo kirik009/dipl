@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Redirect } from "wouter";
 import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -83,14 +82,14 @@ export default function AuthPage() {
             <div className="bg-white p-8 rounded-xl shadow-sm">
               <div className="mb-6 text-center">
                 <GraduationCap className="w-12 h-12 text-primary mx-auto mb-2" />
-                <h1 className="text-2xl font-bold font-heading">Welcome to SentenceBuilder</h1>
-                <p className="text-gray-600 mt-2">Log in or create an account to start learning</p>
+                <h1 className="text-2xl font-bold font-heading">Добро пожаловать</h1>
+                <p className="text-gray-600 mt-2">Войдите или создайти аккаунт, чтобы начать изучение</p>
               </div>
 
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-8">
-                  <TabsTrigger value="login">Log In</TabsTrigger>
-                  <TabsTrigger value="register">Sign Up</TabsTrigger>
+                  <TabsTrigger value="login">Войти</TabsTrigger>
+                  <TabsTrigger value="register">Зарегистрироваться</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="login">
@@ -101,9 +100,9 @@ export default function AuthPage() {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Username</FormLabel>
+                            <FormLabel>Никнейм</FormLabel>
                             <FormControl>
-                              <Input placeholder="Your username" {...field} />
+                              <Input placeholder="Ваш никнейм" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -115,7 +114,7 @@ export default function AuthPage() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel>Пароль</FormLabel>
                             <FormControl>
                               <Input type="password" placeholder="••••••••" {...field} />
                             </FormControl>
@@ -129,19 +128,19 @@ export default function AuthPage() {
                         className="w-full mt-6"
                         disabled={loginMutation.isPending}
                       >
-                        {loginMutation.isPending ? "Logging in..." : "Log In"}
+                        {loginMutation.isPending ? "Вход..." : "Войти"}
                       </Button>
                     </form>
                   </Form>
 
                   <div className="mt-6 text-center text-sm text-gray-500">
-                    Don't have an account?{" "}
+                    Нет аккаунта?{" "}
                     <Button 
                       variant="link" 
                       className="p-0" 
                       onClick={() => setActiveTab("register")}
                     >
-                      Sign up
+                      Зарегистрироваться
                     </Button>
                   </div>
                 </TabsContent>
@@ -154,7 +153,7 @@ export default function AuthPage() {
                         name="fullName"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Full Name</FormLabel>
+                            <FormLabel>Полное имя</FormLabel>
                             <FormControl>
                               <Input placeholder="John Doe" {...field} />
                             </FormControl>
@@ -168,7 +167,7 @@ export default function AuthPage() {
                         name="username"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Username</FormLabel>
+                            <FormLabel>Никнейм</FormLabel>
                             <FormControl>
                               <Input placeholder="Choose a username" {...field} />
                             </FormControl>
@@ -182,7 +181,7 @@ export default function AuthPage() {
                         name="password"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel>Пароль</FormLabel>
                             <FormControl>
                               <Input type="password" placeholder="••••••••" {...field} />
                             </FormControl>
@@ -196,7 +195,7 @@ export default function AuthPage() {
                         name="confirmPassword"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Confirm Password</FormLabel>
+                            <FormLabel>Подтвердите пароль</FormLabel>
                             <FormControl>
                               <Input type="password" placeholder="••••••••" {...field} />
                             </FormControl>
@@ -210,19 +209,19 @@ export default function AuthPage() {
                         className="w-full mt-6"
                         disabled={registerMutation.isPending}
                       >
-                        {registerMutation.isPending ? "Creating account..." : "Create Account"}
+                        {registerMutation.isPending ? "Создание аккаунта..." : "Создать аккаунт"}
                       </Button>
                     </form>
                   </Form>
 
                   <div className="mt-6 text-center text-sm text-gray-500">
-                    Already have an account?{" "}
+                    Есть аккаунт?{" "}
                     <Button 
                       variant="link" 
                       className="p-0" 
                       onClick={() => setActiveTab("login")}
                     >
-                      Log in
+                      Войти
                     </Button>
                   </div>
                 </TabsContent>
@@ -231,7 +230,7 @@ export default function AuthPage() {
 
             {/* Right column - Hero */}
             <div className="bg-primary text-white p-8 rounded-xl shadow-sm hidden md:flex md:flex-col md:justify-center">
-              <h2 className="text-3xl font-bold font-heading mb-6">Improve Your English Skills</h2>
+              <h2 className="text-3xl font-bold font-heading mb-6">Улучшай свои навыки владений английским</h2>
               <ul className="space-y-4">
                 <li className="flex items-start">
                   <div className="bg-white bg-opacity-20 rounded-full p-1 mr-3 mt-1">
@@ -239,7 +238,7 @@ export default function AuthPage() {
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>
-                  <p>Interactive sentence building exercises</p>
+                  <p>Интерактивные упражнения по построению предложений</p>
                 </li>
                 <li className="flex items-start">
                   <div className="bg-white bg-opacity-20 rounded-full p-1 mr-3 mt-1">
@@ -247,7 +246,7 @@ export default function AuthPage() {
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>
-                  <p>Track your progress and see improvement over time</p>
+                  <p>Следи за своим прогрессом</p>
                 </li>
                 <li className="flex items-start">
                   <div className="bg-white bg-opacity-20 rounded-full p-1 mr-3 mt-1">
@@ -255,7 +254,7 @@ export default function AuthPage() {
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>
-                  <p>Learn grammar rules through practice and explanations</p>
+                  <p>Изучай грамматические правила благодаря практике и объяснениям</p>
                 </li>
                 <li className="flex items-start">
                   <div className="bg-white bg-opacity-20 rounded-full p-1 mr-3 mt-1">
@@ -263,7 +262,7 @@ export default function AuthPage() {
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                   </div>
-                  <p>Exercises for all levels: beginner to advanced</p>
+                  <p>Упражнения для всех уровней: от начинающего до продвинутого</p>
                 </li>
               </ul>
               <div className="mt-8">
@@ -277,7 +276,6 @@ export default function AuthPage() {
           </div>
         </div>
       </div>
-      <Footer />
     </>
   );
 }

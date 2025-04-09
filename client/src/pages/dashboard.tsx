@@ -2,7 +2,7 @@ import { FC } from 'react';
 import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/use-auth';
-import { Exercise, UserProgress } from '@shared/schema';
+import { Exercise, ExerciseProgress} from '@shared/schema';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,15 +13,15 @@ const Dashboard: FC = () => {
   const { user } = useAuth();
   
   const { data: exercises, isLoading: isLoadingExercises } = useQuery<Exercise[]>({
-    queryKey: ['/api/exercises', user?.difficultyLevel],
+    queryKey: ['/api/exercises', user?.level],
     queryFn: async () => {
-      const res = await fetch(`/api/exercises?difficulty=${user?.difficultyLevel}`);
+      const res = await fetch(`/api/exercises?difficulty=${user?.level}`);
       if (!res.ok) throw new Error('Failed to fetch exercises');
       return res.json();
     },
   });
   
-  const { data: progress, isLoading: isLoadingProgress } = useQuery<UserProgress[]>({
+  const { data: progress, isLoading: isLoadingProgress } = useQuery<ExerciseProgress[]>({
     queryKey: ['/api/progress'],
     queryFn: async () => {
       const res = await fetch('/api/progress');
@@ -34,7 +34,7 @@ const Dashboard: FC = () => {
   
   // Calculate statistics
   const totalCompleted = progress?.length || 0;
-  const totalCorrect = progress?.filter(p => p.correct).length || 0;
+  const totalCorrect = progress?.filter(p => p.isCorrect).length || 0;
   const accuracyRate = totalCompleted > 0 ? Math.round((totalCorrect / totalCompleted) * 100) : 0;
   
   // Get completed exercise IDs for filtering
@@ -47,7 +47,7 @@ const Dashboard: FC = () => {
           {user ? `Welcome, ${user.username}!` : 'Dashboard'}
         </h1>
         <p className="text-gray-600">
-          Track your progress and continue your English sentence building practice.
+          Следи за своим прогрессом и продолжай совершенствовать английский язык
         </p>
       </div>
       
@@ -61,24 +61,24 @@ const Dashboard: FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium">Completed Exercises</CardTitle>
+                <CardTitle className="text-lg font-medium">Пройденные упражнения</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-baseline">
                   <span className="text-3xl font-bold text-primary mr-2">{totalCompleted}</span>
-                  <span className="text-gray-500">exercises</span>
+                  <span className="text-gray-500">упражнения</span>
                 </div>
               </CardContent>
             </Card>
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium">Accuracy Rate</CardTitle>
+                <CardTitle className="text-lg font-medium">Точность</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-baseline">
                   <span className="text-3xl font-bold text-primary mr-2">{accuracyRate}%</span>
-                  <span className="text-gray-500">correct answers</span>
+                  <span className="text-gray-500">правильные ответы</span>
                 </div>
                 <Progress 
                   value={accuracyRate} 
@@ -89,12 +89,12 @@ const Dashboard: FC = () => {
             
             <Card>
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-medium">Current Level</CardTitle>
+                <CardTitle className="text-lg font-medium">Настоящий уровень</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-baseline">
                   <span className="text-3xl font-bold text-primary mr-2 capitalize">
-                    {user?.difficultyLevel || 'Beginner'}
+                    {user?.level || 'Beginner'}
                   </span>
                 </div>
               </CardContent>
@@ -104,7 +104,7 @@ const Dashboard: FC = () => {
           {/* Available Exercises */}
           <div className="mb-8">
             <h2 className="font-heading text-2xl font-semibold text-gray-900 mb-4">
-              Available Exercises
+              Доступные упражнения
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -114,20 +114,20 @@ const Dashboard: FC = () => {
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start">
                         <div>
-                          <CardTitle className="text-lg">Exercise #{exercise.id}</CardTitle>
+                          <CardTitle className="text-lg">Упражнение #{exercise.id}</CardTitle>
                           <CardDescription className="mt-1 line-clamp-2">
-                            {exercise.translationText}
+                            {exercise.translation}
                           </CardDescription>
                         </div>
                         <Badge variant={
                           completedExerciseIds.has(exercise.id) 
-                            ? (progress?.find(p => p.exerciseId === exercise.id)?.correct 
-                              ? "success" 
+                            ? (progress?.find(p => p.exerciseId === exercise.id)?.isCorrect 
+                              ? "secondary" 
                               : "destructive") 
                             : "outline"
                         }>
                           {completedExerciseIds.has(exercise.id) 
-                            ? (progress?.find(p => p.exerciseId === exercise.id)?.correct 
+                            ? (progress?.find(p => p.exerciseId === exercise.id)?.isCorrect 
                               ? "Completed" 
                               : "Incorrect") 
                             : "Not Started"}
@@ -136,8 +136,8 @@ const Dashboard: FC = () => {
                     </CardHeader>
                     <CardContent className="pb-3">
                       <div className="flex items-center space-x-2 text-sm">
-                        <Badge variant="secondary">{exercise.grammarTopic}</Badge>
-                        <Badge variant="outline" className="capitalize">{exercise.difficultyLevel}</Badge>
+                        {/* <Badge variant="secondary">{exercise.grammarTopic}</Badge> */}
+                        <Badge variant="outline" className="capitalize">{exercise.difficulty}</Badge>
                       </div>
                     </CardContent>
                     <CardFooter>
@@ -153,12 +153,12 @@ const Dashboard: FC = () => {
               ) : (
                 <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
                   <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-1">No exercises available</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">Нет доступных упражнений</h3>
                   <p className="text-gray-600 mb-4">
-                    There are no exercises available for your current level. Try changing your difficulty level in your profile settings.
+                    Нет доступных упражнений для вашего уровня владения английским. Попробуйте поменять уровень сложности в настройках профиля.
                   </p>
                   <Link href="/profile">
-                    <Button variant="outline">Go to Profile Settings</Button>
+                    <Button variant="outline">Настрйоки профиля</Button>
                   </Link>
                 </div>
               )}
@@ -169,7 +169,7 @@ const Dashboard: FC = () => {
           {progress && progress.length > 0 && (
             <div>
               <h2 className="font-heading text-2xl font-semibold text-gray-900 mb-4">
-                Recent Results
+                Последние результаты
               </h2>
               
               <div className="overflow-x-auto bg-white rounded-lg shadow-sm">
@@ -191,19 +191,19 @@ const Dashboard: FC = () => {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">Exercise #{item.exerciseId}</div>
                             {exercise && (
-                              <div className="text-sm text-gray-500 truncate max-w-xs">{exercise.translationText}</div>
+                              <div className="text-sm text-gray-500 truncate max-w-xs">{exercise.translation}</div>
                             )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            {item.correct ? (
+                            {item.isCorrect ? (
                               <div className="flex items-center text-green-600">
                                 <CheckCircle className="h-4 w-4 mr-1" />
-                                <span>Correct</span>
+                                <span>Правильно</span>
                               </div>
                             ) : (
                               <div className="flex items-center text-red-600">
                                 <XCircle className="h-4 w-4 mr-1" />
-                                <span>Incorrect</span>
+                                <span>Неправильно</span>
                               </div>
                             )}
                           </td>
@@ -212,7 +212,7 @@ const Dashboard: FC = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <Link href={`/exercise/${item.exerciseId}`}>
-                              <Button variant="outline" size="sm">Try Again</Button>
+                              <Button variant="outline" size="sm">Попробовать снова</Button>
                             </Link>
                           </td>
                         </tr>

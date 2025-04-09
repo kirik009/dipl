@@ -1,19 +1,25 @@
 import { FC, useState, useEffect } from 'react';
 import DraggableWord from './draggable-word';
 
+interface WordItem {
+  id: string;
+  text: string;
+}
+
 interface WordBankProps {
-  words: string[];
-  activeWords: string[];
-  onWordDragged: (word: string) => void;
-  onWordReturned: (word: string) => void;
+  words: WordItem[];
+  activeWords: WordItem[];
+  onWordDragged: (word: WordItem) => void;
+  onWordReturned: (word: WordItem) => void;
 }
 
 const WordBank: FC<WordBankProps> = ({ words, activeWords, onWordDragged, onWordReturned }) => {
-  const [availableWords, setAvailableWords] = useState<string[]>([]);
+  const [availableWords, setAvailableWords] = useState<WordItem[]>([]);
 
   useEffect(() => {
-    // Filter out words that are already in the sentence
-    const wordsNotInSentence = words.filter(word => !activeWords.includes(word));
+    const wordsNotInSentence = words.filter(
+      (word) => !activeWords.some((w) => w.id === word.id)
+    );
     setAvailableWords(wordsNotInSentence);
   }, [words, activeWords]);
 
@@ -21,9 +27,9 @@ const WordBank: FC<WordBankProps> = ({ words, activeWords, onWordDragged, onWord
     <div className="word-bank bg-gray-100 p-4 rounded-lg">
       <h4 className="text-sm font-medium text-gray-500 mb-3">Word Bank:</h4>
       <div className="flex flex-wrap gap-2">
-        {availableWords.map((word, index) => (
+        {availableWords.map((word) => (
           <DraggableWord 
-            key={`${word}-${index}`} 
+            key={word.id} 
             word={word} 
             onDragStart={() => onWordDragged(word)}
             onDragEnd={(dropped) => {

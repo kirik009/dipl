@@ -1,8 +1,13 @@
 import { useDrop } from 'react-dnd';
 import { cn } from '@/lib/utils';
+import { ConsoleLogWriter } from 'drizzle-orm';
 
+interface WordItem {
+  id: string;
+  text: string;
+}
 interface DropZoneProps {
-  onDrop: (itemId: string) => void;
+  onDrop: ({ id, text }: { id: string; text: string }) => void;
   children: React.ReactNode;
   className?: string;
   isActive?: boolean;
@@ -15,13 +20,16 @@ export const DropZone = ({
   children,
   className,
   isActive: externalIsActive,
-  placeholder = 'Drop words here to form a sentence',
+  placeholder = 'Формируй слова в предложения здесь',
   isEmpty = false,
 }: DropZoneProps) => {
   const [{ isOver, canDrop }, drop] = useDrop(() => ({
     accept: 'word',
-    drop: (item: { id: string }) => {
-      onDrop(item.id);
+    drop: (item: {id: string, text: string, from: string }) => {
+      
+      if (item.from === 'wordBank') {
+        onDrop({ id: item.id, text: item.text }); 
+      }
       return undefined;
     },
     collect: (monitor) => ({

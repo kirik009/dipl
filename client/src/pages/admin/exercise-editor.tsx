@@ -53,6 +53,11 @@ export default function ExerciseEditor() {
   // Fetch grammar topics
   const { data: grammarTopics, isLoading: isLoadingTopics } = useQuery({
     queryKey: ["/api/grammar-topics"],
+    queryFn: async () => {
+      const response = await fetch("/api/grammar-topics");
+      if (!response.ok) throw new Error("Failed to fetch");
+      return response.json();
+    },
   });
   
   // Form definition
@@ -61,7 +66,7 @@ export default function ExerciseEditor() {
     defaultValues: {
       type: "sentence-builder",
       difficulty: "intermediate",
-      grammarTopic: "",
+      grammarTopic_id: 1,
       translation: "",
       correctSentence: "",
       words: [],
@@ -244,11 +249,11 @@ export default function ExerciseEditor() {
               
               <FormField
                 control={form.control}
-                name="grammarTopic"
+                name="grammarTopic_id"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Grammar Topic</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select grammar topic" />
@@ -387,6 +392,7 @@ export default function ExerciseEditor() {
                       {...field} 
                       placeholder="Provide a grammar explanation that will be shown after the exercise is completed"
                       rows={4}
+                      value= {field.value ?? ""} 
                     />
                   </FormControl>
                   <FormDescription>

@@ -2,8 +2,12 @@ import { FC, useRef } from 'react';
 import { useDrag, useDrop } from 'react-dnd';
 import { XCircle } from 'lucide-react';
 
+interface WordItem {
+  id: string;
+  text: string;
+}
 interface DraggableWordProps {
-  word: string;
+  word: WordItem;
   index?: number;
   onDragStart: () => void;
   onDragEnd: (dropped?: boolean) => void;
@@ -33,7 +37,8 @@ const DraggableWord: FC<DraggableWordProps> = ({
     type: 'word',
     item: () => {
       onDragStart();
-      return { type: 'word', word, index };
+      
+      return { id: word.id, text: word.text, index, from: 'wordBank' };
     },
     end: (item, monitor) => {
       const dropResult = monitor.getDropResult<{ dropped: boolean }>();
@@ -102,7 +107,7 @@ const DraggableWord: FC<DraggableWordProps> = ({
         isDragging ? 'opacity-50' : ''
       } ${inDropZone ? 'bg-primary-50' : ''}`}
     >
-      {word}
+      {word.text}
       {inDropZone && onRemove && (
         <button 
           className="ml-2 text-gray-400 hover:text-red-500 focus:outline-none"

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
 import { 
   Form, 
   FormControl, 
@@ -51,11 +49,20 @@ type ProfileUpdateFormData = z.infer<typeof profileUpdateSchema>;
 export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
+  type ProgressStats = {
+    accuracy: number;
+    totalExercises: number;
+    correctExercises: number;
+  };
   // Fetch user progress statistics
-  const { data: progressStats, isLoading: isLoadingProgress } = useQuery({
-    queryKey: ["/api/user/progress"],
-  });
+const { data: progressStats, isLoading: isLoadingProgress } = useQuery<ProgressStats>({
+  queryKey: ["/api/user/progress"],
+  queryFn: async () => {
+    const res = await apiRequest("GET", "/api/user/progress");
+    return res.json();
+  },
+});
   
   const form = useForm<ProfileUpdateFormData>({
     resolver: zodResolver(profileUpdateSchema),
@@ -106,7 +113,6 @@ export default function ProfilePage() {
         <div className="container mx-auto pt-20 pb-12 px-4 min-h-screen flex items-center justify-center">
           <p>Please log in to view your profile.</p>
         </div>
-        <Footer />
       </>
     );
   }
@@ -143,19 +149,19 @@ export default function ProfilePage() {
                       <p className="text-4xl font-bold text-primary mb-1">
                         {progressStats.accuracy ? progressStats.accuracy.toFixed(0) : 0}%
                       </p>
-                      <p className="text-gray-600">Accuracy Rate</p>
+                      <p className="text-gray-600">Точность</p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg text-center">
                       <p className="text-4xl font-bold text-primary mb-1">
                         {progressStats.totalExercises || 0}
                       </p>
-                      <p className="text-gray-600">Exercises Completed</p>
+                      <p className="text-gray-600">Упражнений пройдено</p>
                     </div>
                     <div className="bg-gray-50 p-4 rounded-lg text-center">
                       <p className="text-4xl font-bold text-primary mb-1">
                         {progressStats.correctExercises || 0}
                       </p>
-                      <p className="text-gray-600">Correct Answers</p>
+                      <p className="text-gray-600">Правильные ответы</p>
                     </div>
                   </div>
                 ) : (
@@ -167,7 +173,7 @@ export default function ProfilePage() {
                 )}
                 
                 <div className="mb-8">
-                  <h3 className="font-heading text-xl font-semibold mb-4">Profile Settings</h3>
+                  <h3 className="font-heading text-xl font-semibold mb-4">Настройки профиля</h3>
                   
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -177,7 +183,7 @@ export default function ProfilePage() {
                           name="fullName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Full Name</FormLabel>
+                              <FormLabel>Полное имя</FormLabel>
                               <FormControl>
                                 <Input placeholder="Your full name" {...field} />
                               </FormControl>
@@ -191,7 +197,7 @@ export default function ProfilePage() {
                           name="level"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Difficulty Level</FormLabel>
+                              <FormLabel>Уровень</FormLabel>
                               <Select 
                                 onValueChange={field.onChange} 
                                 defaultValue={field.value}
@@ -202,13 +208,13 @@ export default function ProfilePage() {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  <SelectItem value="beginner">Beginner</SelectItem>
-                                  <SelectItem value="intermediate">Intermediate</SelectItem>
-                                  <SelectItem value="advanced">Advanced</SelectItem>
+                                  <SelectItem value="beginner">Начинающий</SelectItem>
+                                  <SelectItem value="intermediate">Средний</SelectItem>
+                                  <SelectItem value="advanced">Продвинутый</SelectItem>
                                 </SelectContent>
                               </Select>
                               <FormDescription>
-                                This determines the difficulty of exercises you'll see.
+                                Это определяет сложность заданий, с которыми вы сталкиваетесь.
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -217,19 +223,19 @@ export default function ProfilePage() {
                       </div>
                       
                       <div>
-                        <h4 className="font-medium text-gray-700 mb-4">Change Password</h4>
+                        <h4 className="font-medium text-gray-700 mb-4">Сменить пароль</h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                           <FormField
                             control={form.control}
                             name="currentPassword"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Current Password</FormLabel>
+                                <FormLabel>Настоящий пароль</FormLabel>
                                 <FormControl>
                                   <Input type="password" placeholder="••••••••" {...field} />
                                 </FormControl>
                                 <FormDescription>
-                                  Leave blank to keep current password
+                                  Оставьте пустым, чтобы сохранить настоящий пароль
                                 </FormDescription>
                                 <FormMessage />
                               </FormItem>
@@ -241,7 +247,7 @@ export default function ProfilePage() {
                             name="newPassword"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>New Password</FormLabel>
+                                <FormLabel>Новый пароль</FormLabel>
                                 <FormControl>
                                   <Input type="password" placeholder="••••••••" {...field} />
                                 </FormControl>
@@ -255,7 +261,7 @@ export default function ProfilePage() {
                             name="confirmNewPassword"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Confirm New Password</FormLabel>
+                                <FormLabel>Подтвердите новый пароль</FormLabel>
                                 <FormControl>
                                   <Input type="password" placeholder="••••••••" {...field} />
                                 </FormControl>
@@ -272,7 +278,7 @@ export default function ProfilePage() {
                           className="px-6"
                           disabled={updateProfileMutation.isPending}
                         >
-                          {updateProfileMutation.isPending ? "Saving..." : "Save Changes"}
+                          {updateProfileMutation.isPending ? "Сохранение..." : "Сохранить изменения"}
                         </Button>
                       </div>
                     </form>
@@ -283,7 +289,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </main>
-      <Footer />
     </>
   );
 }

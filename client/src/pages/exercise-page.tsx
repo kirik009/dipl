@@ -2,37 +2,86 @@ import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
 import { apiRequest } from "@/lib/queryClient";
 import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
 import { DragItem } from "@/components/ui/dnd/drag-item";
 import { DropZone } from "@/components/ui/dnd/drop-zone";
+import  WordBank  from "@/components/ui/dnd/word-bank";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Exercise } from "@shared/schema";
+import { Exercise, Task, TaskProgress, taskProgress } from "@shared/schema";
 import { Loader2, RefreshCw, SkipForward } from "lucide-react";
+import { ConsoleLogWriter } from "drizzle-orm";
+
+
+// const topic = exercise.grammarTopic
 
 export default function ExercisePage() {
-  const { id } = useParams<{ id: string }>();
+
+  const { taskId, progressId, exerciseId, seq } = useParams<{taskId : string, progressId: string, exerciseId: string, seq: string}>();
+      
+  const { data: prog } = useQuery<TaskProgress>({
+          queryKey: [`/api/task_prog/${progressId}`],
+          queryFn: async () => {
+              const response = await fetch(`/api/task_prog/${progressId}`);
+              if (!response.ok) throw new Error("Failed to fetch tasks");
+              return response.json();
+            },
+        });
+
+  const { data: task } = useQuery<Task>({
+    queryKey: [`/api/tasks/${taskId}`],
+    queryFn: async () => {
+        const response = await fetch(`/api/tasks/${taskId}`);
+        if (!response.ok) throw new Error("Failed to fetch tasks");
+        return response.json();
+      },
+  });
+
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  
+  type WordItem = { id: string; text: string };  
   // State for word bank and sentence building
-  const [wordBank, setWordBank] = useState<string[]>([]);
-  const [sentence, setSentence] = useState<string[]>([]);
-  
+  const [wordBank, setWordBank] = useState<WordItem[]>([]);
+  const [sentence, setSentence] = useState<WordItem[]>([]);
+
+
+  const [hours, minutes, seconds] = task?.timeConstraint ? task?.timeConstraint.split(":").map(Number) : [0, 0, 0];
+
+  const durationMs = ((hours * 60 + minutes) * 60 + seconds) * 1000;
+
+  const date = task ? new Date(task?.createdAt): new Date()
+  const date2 = task ? new Date(date.getTime() - durationMs): new Date()
+  const [timeLeft, setTimeLeft] = task ? useState(date.getTime() -  date2.getTime() ) : useState(0); // 600 сек = 10 мин
+
+useEffect(() => {
+  if (timeLeft <= 0) {
+    // handleSubmit(); // или блокировка интерфейса
+    return;
+  }
+
+  const timer = setTimeout(() => {
+    setTimeLeft(prev => prev - 1000);
+  }, 1000);
+
+  return () => clearTimeout(timer);
+}, [timeLeft]);
+
   // Fetch exercise data
   const { data: exercise, isLoading, error } = useQuery<Exercise>({
-    queryKey: [`/api/exercises/${id}`],
+    queryKey: [`/api/exercises/${exerciseId}`],
   });
-  
-  // Set up word bank when exercise loads
+
+   
   useEffect(() => {
     if (exercise) {
-      setWordBank(exercise.words);
+      setWordBank(
+        exercise.words.map((word, index) => ({
+          id: `${word}-${index}-${crypto.randomUUID()}`,
+          text: word,
+        }))
+      );
       setSentence([]);
     }
   }, [exercise]);
@@ -40,17 +89,20 @@ export default function ExercisePage() {
   // Submit exercise mutation
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const userAnswer = sentence.join(' ');
+      const userAnswer = sentence.map(w => w.text).join(" ");
+     
       const res = await apiRequest("POST", "/api/exercises/submit", {
-        exerciseId: parseInt(id),
+        taskId: parseInt(taskId),
+        exerciseId: parseInt(exerciseId),
         userAnswer,
+        taskProgressId: parseInt(progressId),
       });
       return await res.json();
     },
     onSuccess: (data) => {
-      navigate(`/results/${id}?isCorrect=${data.isCorrect}`);
+      navigate(`/tasks/${taskId}/prog/${progressId}/exercises/${exerciseId}/seq/${seq}/results?isCorrect=${data.isCorrect}`);
     },
-    onError: (error: Error) => {
+      onError: (error: Error) => {
       toast({
         title: "Error submitting answer",
         description: error.message,
@@ -60,21 +112,25 @@ export default function ExercisePage() {
   });
   
   // Handle moving a word from word bank to sentence
-  const handleAddWord = (word: string) => {
-    setWordBank(wordBank.filter(w => w !== word));
-    setSentence([...sentence, word]);
-  };
+  // const handleAddWord = (word: string) => {
+  //   setWordBank(wordBank.filter(w => w !== word));
+  //   setSentence([...sentence, word]);
+  // };
   
   // Handle removing a word from sentence back to word bank
   const handleRemoveWord = (word: string) => {
-    setSentence(sentence.filter(w => w !== word));
-    setWordBank([...wordBank, word]);
+    
   };
   
   // Reset exercise
   const handleReset = () => {
     if (exercise) {
-      setWordBank(exercise.words);
+      setWordBank(
+        exercise.words.map((word, index) => ({
+          id: `${word}-${index}-${crypto.randomUUID()}`,
+          text: word,
+        }))
+      );
       setSentence([]);
     }
   };
@@ -96,7 +152,7 @@ export default function ExercisePage() {
   // Skip exercise
   const handleSkip = () => {
     // Fetch the next exercise - for now we just navigate to the results
-    navigate(`/results/${id}?skipped=true`);
+    navigate(`/tasks/${taskId}/results/${exerciseId}?skipped=true`);
   };
   
   if (isLoading) {
@@ -106,7 +162,6 @@ export default function ExercisePage() {
         <div className="container mx-auto pt-20 pb-12 px-4 min-h-screen flex items-center justify-center">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
-        <Footer />
       </>
     );
   }
@@ -121,18 +176,27 @@ export default function ExercisePage() {
             <p className="text-gray-600 mb-6">
               {error?.message || "Could not load the exercise. Please try again."}
             </p>
-            <Button onClick={() => navigate("/")}>Return to Home</Button>
+            <Button onClick={() => navigate("/")}>На главную</Button>
           </div>
         </div>
-        <Footer />
       </>
     );
   }
   
   return (
     <>
+      
       <Navbar />
       <main className="container mx-auto pt-20 pb-12 px-4">
+        <p>{
+(() =>  {
+  const totalSeconds = Math.floor(timeLeft / 1000); 
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${hours}:${minutes}:${seconds}`
+})()
+  }</p>
         <div className="py-16">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -146,9 +210,9 @@ export default function ExercisePage() {
                       </svg>
                       <span className="capitalize">{exercise.difficulty}</span>
                     </div>
-                    <div className="bg-white text-primary px-3 py-1 rounded-full font-medium text-sm">
+                    {/* <div className="bg-white text-primary px-3 py-1 rounded-full font-medium text-sm">
                       {exercise.grammarTopic}
-                    </div>
+                    </div> */}
                   </div>
                 </div>
                 <div className="mt-4 flex items-center">
@@ -168,39 +232,55 @@ export default function ExercisePage() {
                     <p className="text-gray-700 font-medium">{exercise.translation}</p>
                   </div>
                   
-                  {/* Drop Zone for sentence building */}
                   <DropZone 
-                    onDrop={() => {}} 
-                    isEmpty={sentence.length === 0}
+                    onDrop={(wordItem) => {
+                      setSentence(prev => [...prev, wordItem]) 
+                     
+                    }}
+                    
+                      isEmpty={sentence.length === 0}
                     className="mb-6"
                   >
                     {sentence.map((word, index) => (
                       <DragItem
-                        key={`sentence-${index}`}
-                        id={`sentence-${word}-${index}`}
-                        text={word}
-                        index={index}
-                        onRemove={() => handleRemoveWord(word)}
+                      
+                      id={word.id}
+                      text={word.text}
+                      index={index}
+                        canMove={true}
+                        onRemove={() => {
+                          setSentence(prev => prev.filter(w => w.id !== word.id));
+                        }}
+                        moveCard={(dragIndex: number, hoverIndex: number) => {
+                          setSentence((prevSentence) => {
+                            
+                            const updated = [...prevSentence];
+                            const [removed] = updated.splice(dragIndex, 1);
+                            updated.splice(hoverIndex, 0, removed);
+                           
+                            return updated;
+                          });
+                        }}
+                        
                       />
-                    ))}
+                    ))
+                    
+                    }
                   </DropZone>
                 </div>
                 
-                {/* Word Bank */}
-                <div className="word-bank bg-gray-100 p-4 rounded-lg">
-                  <h4 className="text-sm font-medium text-gray-500 mb-3">Word Bank:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {wordBank.map((word, index) => (
-                      <div
-                        key={`bank-${index}`}
-                        className="bg-white px-3 py-2 rounded shadow-sm cursor-grab hover:bg-gray-50"
-                        onClick={() => handleAddWord(word)}
-                      >
-                        {word}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <WordBank
+                words={wordBank}
+                activeWords={sentence}
+                onWordDragged={(wordItem) => {
+                  
+                  setWordBank(prev => prev.filter(w => w.id !== wordItem.id));
+                }}
+                onWordReturned={(wordItem) => {
+                  setWordBank(prev => [...prev, wordItem]);
+                }}
+                >
+                </WordBank>
                 
                 <div className="mt-8 flex justify-between">
                   <Button
@@ -209,7 +289,7 @@ export default function ExercisePage() {
                     className="gap-1"
                   >
                     <RefreshCw className="h-4 w-4" />
-                    Reset
+                    Перезагрузить
                   </Button>
                   <div>
                     <Button
@@ -218,13 +298,13 @@ export default function ExercisePage() {
                       className="mr-2 gap-1"
                     >
                       <SkipForward className="h-4 w-4" />
-                      Skip
+                      Пропустить
                     </Button>
                     <Button
                       onClick={handleCheckAnswer}
                       disabled={submitMutation.isPending}
                     >
-                      {submitMutation.isPending ? "Checking..." : "Check Answer"}
+                      {submitMutation.isPending ? "Проверка..." : "Проверить ответ"}
                     </Button>
                   </div>
                 </div>
@@ -233,7 +313,7 @@ export default function ExercisePage() {
           </div>
         </div>
       </main>
-      <Footer />
+    
     </>
   );
 }

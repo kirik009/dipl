@@ -37,6 +37,11 @@ export default function ExerciseManagement() {
   // Fetch grammar topics for filtering
   const { data: grammarTopics } = useQuery({
     queryKey: ["/api/grammar-topics"],
+    queryFn: async () => {
+      const response = await fetch("/api/grammar-topics");
+      if (!response.ok) throw new Error("Failed to fetch");
+      return response.json();
+    },
   });
 
   // Delete exercise mutation
@@ -129,10 +134,10 @@ export default function ExerciseManagement() {
               <SelectValue placeholder="All Difficulties" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Difficulties</SelectItem>
-              <SelectItem value="beginner">Beginner</SelectItem>
-              <SelectItem value="intermediate">Intermediate</SelectItem>
-              <SelectItem value="advanced">Advanced</SelectItem>
+              <SelectItem value="all">Все уровни</SelectItem>
+              <SelectItem value="beginner">Начинающий</SelectItem>
+              <SelectItem value="intermediate">Средний</SelectItem>
+              <SelectItem value="advanced">Продвинутый</SelectItem>
             </SelectContent>
           </Select>
 
@@ -141,7 +146,7 @@ export default function ExerciseManagement() {
               <SelectValue placeholder="All Grammar Topics" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Grammar Topics</SelectItem>
+              <SelectItem value="all">Все темы</SelectItem>
               {grammarTopics?.map((topic: any) => (
                 <SelectItem key={topic.id} value={topic.name}>
                   {topic.name}
@@ -153,7 +158,7 @@ export default function ExerciseManagement() {
           <Button asChild>
             <Link href="/admin/exercises/new">
               <FilePlus className="mr-2 h-4 w-4" />
-              Add Exercise
+              Добавить упражнение
             </Link>
           </Button>
         </div>
@@ -165,11 +170,11 @@ export default function ExerciseManagement() {
           <thead className="bg-gray-100">
             <tr>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Translation</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">English Sentence</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Grammar Topic</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Difficulty</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Перевод</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Предложение</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Темы</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Сложность</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">

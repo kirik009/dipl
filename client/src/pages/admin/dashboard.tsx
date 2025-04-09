@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useLocation, Link } from "wouter";
 import { Navbar } from "@/components/layout/navbar";
-import { Footer } from "@/components/layout/footer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UserManagement from "./user-management";
 import ExerciseManagement from "./exercise-management";
 import ExerciseEditor from "./exercise-editor";
@@ -41,8 +39,8 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="bg-gray-800 text-white p-6">
                 <div className="flex justify-between items-center">
-                  <h2 className="font-heading text-2xl font-semibold">Admin Dashboard</h2>
-                  <div className="bg-red-500 px-3 py-1 rounded-full text-sm font-medium">Administrator</div>
+                  <h2 className="font-heading text-2xl font-semibold">Панель администратора</h2>
+                  <div className="bg-red-500 px-3 py-1 rounded-full text-sm font-medium">Администратор</div>
                 </div>
               </div>
               
@@ -55,19 +53,19 @@ export default function AdminDashboard() {
                     <Link href="/admin/users">
                       <a className={`py-4 px-4 font-medium ${activeTab === 'users' ? 'text-primary border-b-2 border-primary' : 'text-gray-600'}`}
                          onClick={() => setActiveTab('users')}>
-                        Users
+                        Пользователи
                       </a>
                     </Link>
                     <Link href="/admin/exercises">
                       <a className={`py-4 px-4 font-medium ${activeTab === 'exercises' ? 'text-primary border-b-2 border-primary' : 'text-gray-600'}`}
                          onClick={() => setActiveTab('exercises')}>
-                        Exercises
+                        Упражнения
                       </a>
                     </Link>
                     <Link href="/admin/grammar">
                       <a className={`py-4 px-4 font-medium ${activeTab === 'grammar' ? 'text-primary border-b-2 border-primary' : 'text-gray-600'}`}
                          onClick={() => setActiveTab('grammar')}>
-                        Grammar Topics
+                        Грамматические темы
                       </a>
                     </Link>
                   </div>
@@ -88,7 +86,6 @@ export default function AdminDashboard() {
           </div>
         </div>
       </main>
-      <Footer />
     </>
   );
 }
