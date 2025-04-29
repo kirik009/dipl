@@ -109,7 +109,7 @@
             if (!updatedTask) {
               return res.status(404).json({ message: "Exercise not found" });
             }
-            console.log(updatedTask)
+           
             res.json(updatedTask);
           } catch (error) {
             if (error instanceof z.ZodError) {

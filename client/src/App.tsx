@@ -34,10 +34,10 @@ function Router() {
       <ProtectedRoute path="/admin/users" component={AdminDashboard} />
       <ProtectedRoute path="/admin/exercises" component={AdminDashboard} />
       <ProtectedRoute path="/admin/exercises/new" component={AdminDashboard} />
-      <ProtectedRoute path="/admin/tasks" component={TaskPage} />
-      <ProtectedRoute path="/admin/tasks/new" component={TaskEditor} />
+      <ProtectedRoute path="/admin/tasks" component={AdminDashboard} />
+      <ProtectedRoute path="/admin/tasks/new" component={AdminDashboard} />
       <ProtectedRoute path="/admin/exercises/:id/edit" component={AdminDashboard} />
-      <ProtectedRoute path="/admin/tasks/:id/edit" component={TaskEditor} />
+      <ProtectedRoute path="/admin/tasks/:id/edit" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -64,7 +64,7 @@ export async function exerciseRoutes(app: Express) {
         }
       });
 
-      app.get("/task_exercises_prog/:id/", async (req, res, next) => {
+      app.get("/api/task_exercises_prog/:id", async (req, res, next) => {
         try {
           const id = parseInt(req.params.id);
           const exercises = await storage.getTaskExerciseProgs(id);

@@ -18,11 +18,13 @@ export function Navbar() {
     { href: "/", label: "Главная" },
     { href: "/tasks", label: "Упражнения", protected: true },
     { href: "/profile", label: "Профиль", protected: true },
-    { href: "/admin", label: "Панель администратора", admin: true }
+    { href: "/admin", label: "Панель администратора", admin: true },
+    { href: "/admin", label: "Панель преподавателя", teacher: true}
   ];
 
   const filteredMenuItems = menuItems.filter(item => {
     if (item.admin && (!user || user.role !== 'admin')) return false;
+    if (item.teacher && (!user || user.role !== 'teacher')) return false;
     if (item.protected && !user) return false;
     return true;
   });

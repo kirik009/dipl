@@ -190,14 +190,29 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getTasks(): Promise<Task[]> {
+  async getTasks(): Promise<(Task & { creatorFullName: string | null })[]> {
     try {
-      return await db.select().from(tasks);
+      const rows = await db
+        .select({
+          id: tasks.id,
+          name: tasks.name,
+          createdAt: tasks.createdAt,
+          createdBy: tasks.createdBy,
+          triesNumber: tasks.triesNumber,
+          exercisesNumber: tasks.exercisesNumber,
+          timeConstraint: tasks.timeConstraint,
+          creatorFullName: users.fullName,
+        })
+        .from(tasks)
+        .leftJoin(users, eq(tasks.createdBy, users.id));
+  
+      return rows;
     } catch (error) {
       console.error("Error getting tasks:", error);
       return [];
     }
   }
+  
   async getTaskExercise(task_id?: number, seq?: number): Promise<Exercise> {
     try {
       
@@ -219,12 +234,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTaskExercises(task_id?: number, seq?: number): Promise<Exercise[]> {
-    try {
-      
+    try {  
       if (task_id) {
-        const [exers] = await db.select().from(exercises).where(
+        const exers = await db.select().from(exercises).where(
           eq(exercises.task_id, task_id));
-        return [exers];
+        return exers;
       } 
       
       const [exer] = await db.select().from(exercises);

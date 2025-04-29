@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertExerciseSchema,  submitExerciseSchema, insertTaskSchema, insertTaskProgressSchema } from "@shared/schema";
+import { insertExerciseSchema,  submitExerciseSchema, insertTaskSchema, insertTaskProgressSchema, User } from "@shared/schema";
 import { z } from "zod";
 import { taskRoutes } from "./routes/taskRoutes";
 import { exerciseRoutes } from "./routes/exerciseRoutes";
@@ -50,6 +50,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       next(error);
     }
   });
+
+
+  app.patch("/api/admin/users/:id", async (req, res, next) => {
+    try {
+      // Проверка авторизации и роли
+      if (!req.isAuthenticated() || req.user.role !== "admin") {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+  
+      const id = Number(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+  
+      const { fullName, username, role, level, password } = req.body;
+  
+      // Формируем объект обновления
+      const userUpdate: Partial<User> = {};
+      if (fullName !== undefined) userUpdate.fullName = fullName;
+      if (username !== undefined) userUpdate.username = username;
+      if (role !== undefined) userUpdate.role = role;
+      if (level !== undefined) userUpdate.level = level;
+      if (password !== undefined) userUpdate.password = password; // Внутри storage будет захеширован
+  
+      const updatedUser = await storage.updateUser(id, userUpdate);
+  
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found or update failed" });
+      }
+  
+      // Убираем пароль перед отправкой
+      const { password: _, ...userWithoutPassword } = updatedUser;
+  
+      res.json(userWithoutPassword);
+    } catch (error) {
+      next(error);
+    }
+  });
+
 
   return createServer(app);
 }

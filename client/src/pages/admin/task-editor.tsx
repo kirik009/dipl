@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -38,8 +38,11 @@ export default function TaskEditor() {
   const [wordInput, setWordInput] = useState("");
   const [tagInput, setTagInput] = useState("");
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+  const [exerciseToDelete, setExerciseToDelete] = useState<Exercise | null>(null);
   const isEditing = !!id && id !== "new";
   
+  const [cursorPos, setCursorPos] = useState<number>(0); // Состояние для хранения позиции курсора
+  const timeInputRef = useRef<HTMLInputElement | null>(null);
 
   const { data: exercises, isLoading: isLoadingExercise, error } = useQuery<Exercise[]>({
     queryKey: [`/api/task_exercises/${id}`],
@@ -55,7 +58,8 @@ export default function TaskEditor() {
     resolver: zodResolver(insertTaskSchema),
     defaultValues: {
       name: "",
-     
+      triesNumber:0,
+      timeConstraint: "0",
     }
   });
   
@@ -93,7 +97,7 @@ export default function TaskEditor() {
   // Update exercise mutation
   const updateTaskMutation =  useMutation({
     mutationFn: async (data: FormValues) => {
-      const res = await apiRequest("PUT", `/api/exercises/${id}`, data);
+      const res = await apiRequest("PUT", `/api/tasks/${id}`, data);
       return await res.json();
     },
     onSuccess: () => {
@@ -112,15 +116,15 @@ export default function TaskEditor() {
     },
   });
    
-  const deleteExerciseMutation = useMutation({
+  const deleteTaskMutation = useMutation({
     mutationFn: async (taskId: number) => {
       await apiRequest("DELETE", `/api/tasks/${taskId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
       toast({
-        title: "Exercise deleted",
-        description: "The exercise has been successfully deleted.",
+        title: "Task deleted",
+        description: "The task has been successfully deleted.",
       });
       setTaskToDelete(null);
     },
@@ -133,20 +137,46 @@ export default function TaskEditor() {
     },
   });
 
+    const deleteExerciseMutation = useMutation({
+      mutationFn: async (exerciseId: number) => {
+        await apiRequest("DELETE", `/api/exercises/${exerciseId}`);
+      },
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
+        toast({
+          title: "Exercise deleted",
+          description: "The exercise has been successfully deleted.",
+        });
+        setExerciseToDelete(null);
+      },
+      onError: (error: Error) => {
+        toast({
+          title: "Deletion failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      },
+    });
+
     const handleDeleteTask = (task: Task) => {
       setTaskToDelete(task);
     };
   
-    const confirmDeleteExercise = () => {
-      if (exerciseToDelete) {
-        deleteExerciseMutation.mutate(exerciseToDelete.id);
-      }
-    };
   
     const handleEditExercise = (exerciseId: number) => {
       navigate(`/admin/exercises/${exerciseId}/edit`);
     };
 
+      const handleDeleteExercise = (exercise: Exercise) => {
+        setExerciseToDelete(exercise);
+      };
+    
+      const confirmDeleteExercise = () => {
+        if (exerciseToDelete) {
+          deleteExerciseMutation.mutate(exerciseToDelete.id);
+        }
+      };
+    
   // Handle form submission
   const onSubmit = (values: FormValues) => {
     // Remove the extra fields we added for UI purposes
@@ -161,6 +191,52 @@ export default function TaskEditor() {
   
   const isLoading = isLoadingExercise;
   
+ 
+  function formatToTimeString(value: string): string {
+    // Удаляем всё кроме цифр
+    const digitsOnly = value.replace(/\D/g, "").slice(0, 6); // не больше 6 цифр
+    const parts: string[] = digitsOnly.match(/.{1,2}/g) || [];
+  
+    // Добавляем нули, если не хватает
+    while (parts.length < 3) {
+      parts.unshift("00");
+    }
+  
+    return parts.map(part => part.padStart(2, "0")).join(":");
+  }
+  
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    const formatted = formatToTimeString(raw);
+    form.setValue("timeConstraint", formatted); // обновляем значение формы
+
+    // Сохраняем позицию курсора до обновления
+    let cursorPosition = e.target.selectionStart || 0;
+    if (cursorPosition == 2 || cursorPosition == 5) {
+    setCursorPos(cursorPosition + 1);
+    console.log(cursorPosition)
+      cursorPosition += 1
+  }
+    else setCursorPos(cursorPosition);
+    // Обновляем значение в input
+    setTimeout(() => {
+      if (timeInputRef.current) {
+        // Восстанавливаем позицию курсора
+        timeInputRef.current.setSelectionRange(cursorPosition, cursorPosition);
+      }
+    }, 0);
+  };
+
+  const handleFocus = () => {
+    if (timeInputRef.current) {
+      // Используем setTimeout с нулевой задержкой, чтобы установить курсор в начало сразу после рендера
+      setTimeout(() => {
+        if (timeInputRef.current) {
+          timeInputRef.current.setSelectionRange(0, 0); // Устанавливаем курсор в начало
+        }
+      }, 0);
+    }
+  };
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -201,11 +277,48 @@ export default function TaskEditor() {
                 </FormItem>
               )}
             />
+
+<FormField
+              control={form.control}
+              name="triesNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Количество попыток </FormLabel>
+                  <FormControl>
+                    <Input type="number"{...field} placeholder="Введите 0, если хотите неограниченное количество попыток" />
+                  </FormControl>
+                  
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="timeConstraint"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ограничение по времени </FormLabel>
+                  <FormControl>
+                <Input
+                  onFocus={handleFocus}
+                  ref={timeInputRef}
+                  value={field.value}
+                  onChange={(e) => handleTimeChange(e)} // Обработчик изменения времени
+                  placeholder="Введите 00:00:00, если хотите неограниченное время"
+                />
+              </FormControl>
+                  
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
    
             
           {/* Exercises Table */}
-     {exercises && 
+     {exercises!= undefined && exercises!=null && exercises.length > 0 && 
+       
      <div className="overflow-x-auto">
         <table className="min-w-full bg-white">
           <thead className="bg-gray-100">
@@ -288,7 +401,7 @@ export default function TaskEditor() {
                 {createTaskMutation.isPending || updateTaskMutation.isPending
                   ? "Сохранение..."
                   : isEditing
-                  ? "Обновить упржанение"
+                  ? "Обновить упражнение"
                   : "Создать упражнение"}
               </Button>
             </div>

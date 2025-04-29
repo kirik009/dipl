@@ -10,13 +10,10 @@ import  WordBank  from "@/components/ui/dnd/word-bank";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Exercise, Task, TaskProgress, taskProgress } from "@shared/schema";
+import { Exercise, Task, TaskProgress, taskProgress, insertTaskProgressSchema } from "@shared/schema";
 import { Loader2, RefreshCw, SkipForward } from "lucide-react";
 import { ConsoleLogWriter } from "drizzle-orm";
-
-
-// const topic = exercise.grammarTopic
-
+import { z } from "zod";
 export default function ExercisePage() {
 
   const { taskId, progressId, exerciseId, seq } = useParams<{taskId : string, progressId: string, exerciseId: string, seq: string}>();
@@ -46,27 +43,52 @@ export default function ExercisePage() {
   const [wordBank, setWordBank] = useState<WordItem[]>([]);
   const [sentence, setSentence] = useState<WordItem[]>([]);
 
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const stored = localStorage.getItem("timeLeft");
+    return stored ? parseInt(stored, 10) : 0;
+  });
 
-  const [hours, minutes, seconds] = task?.timeConstraint ? task?.timeConstraint.split(":").map(Number) : [0, 0, 0];
+   type FormValues = z.infer<typeof insertTaskProgressSchema>;
 
-  const durationMs = ((hours * 60 + minutes) * 60 + seconds) * 1000;
-
-  const date = task ? new Date(task?.createdAt): new Date()
-  const date2 = task ? new Date(date.getTime() - durationMs): new Date()
-  const [timeLeft, setTimeLeft] = task ? useState(date.getTime() -  date2.getTime() ) : useState(0); // 600 сек = 10 мин
+  const updateTaskMutation =  useMutation({
+    mutationFn: async (data: FormValues) => {
+      const res = await apiRequest("PUT", `/api/task_prog/${progressId}`, data);
+      return await res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "task progress updated",
+        description: "The task progress has been successfully updated.",
+      });
+      navigate(`/tasks/${taskId}/prog/${progressId}/results`)
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
 useEffect(() => {
-  if (timeLeft <= 0) {
-    // handleSubmit(); // или блокировка интерфейса
-    return;
-  }
 
-  const timer = setTimeout(() => {
-    setTimeLeft(prev => prev - 1000);
-  }, 1000);
+      if (timeLeft <= 0) {
+        updateTaskMutation.mutate( 
+          {}
+       )
+        
+      }
+    
+      const timer = setTimeout(() => {
+        setTimeLeft(prev => prev - 1000);
+      }, 1000);
+    
+      return () => clearTimeout(timer);
+    }, [timeLeft]);
+    
+  
 
-  return () => clearTimeout(timer);
-}, [timeLeft]);
 
   // Fetch exercise data
   const { data: exercise, isLoading, error } = useQuery<Exercise>({
@@ -147,6 +169,7 @@ useEffect(() => {
     }
     
     submitMutation.mutate();
+    localStorage.setItem("timeLeft", timeLeft.toString());
   };
   
   // Skip exercise
@@ -188,15 +211,16 @@ useEffect(() => {
       
       <Navbar />
       <main className="container mx-auto pt-20 pb-12 px-4">
-        <p>{
+      <p className="text-lg text-gray-600 mb-8">{
 (() =>  {
   const totalSeconds = Math.floor(timeLeft / 1000); 
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
-  return `${hours}:${minutes}:${seconds}`
+  return `${String(hours).length === 1 ? `0${hours}` : hours}:${String(minutes).length === 1 ? `0${minutes}` : minutes}:${String(seconds).length === 1 ? `0${seconds}` : seconds}`
 })()
-  }</p>
+}
+</p>
         <div className="py-16">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">

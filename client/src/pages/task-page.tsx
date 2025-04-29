@@ -48,7 +48,7 @@ export default function TaskPage() {
         userId: Number(user?.id),
         taskId: Number(id),
       });
-      const data = await res.json(); // здесь data должен быть объектом с id
+      const data = await res.json();
       return data; 
     },
      onSuccess: (data) => {
@@ -73,7 +73,12 @@ export default function TaskPage() {
 
   const handleSubmit = () => {
     submitMutation.mutate();
-    
+    const [hours, minutes, seconds] = task?.timeConstraint ? task?.timeConstraint.split(":").map(Number) : [0, 0, 0];
+    const durationMs = ((hours * 60 + minutes) * 60 + seconds) * 1000;
+    const date = task ? new Date(task?.createdAt): new Date()
+    const date2 = task ? new Date(date.getTime() - durationMs): new Date()
+    const timeLeft = task ? (date.getTime() -  date2.getTime() ) : 0;
+    localStorage.setItem("timeLeft", timeLeft.toString());    
   };
 
 
@@ -108,12 +113,11 @@ export default function TaskPage() {
       <div className="flex flex-col items-center mb-6">
         <p className=" mx-auto w-fit">{task?.name}</p>
         <p className="mx-auto w-fit">Количество попыток: {task?.triesNumber ? task.triesNumber : "не ограничено"}</p>
-        <p className=" mx-auto w-fit">Ограничение по времени: {task?.timeConstraint ? task.timeConstraint : "не ограничено"}</p>
-        <button  className="gap-2"
+        <p className=" mx-auto w-fit">Ограничение по времени: {task?.timeConstraint !== "00:00:00" ? task?.timeConstraint : "не ограничено"}</p>
+        <button  className="h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90"
               
                 onClick={handleSubmit}
-                >
-              
+                >             
                     Начать тест
                 </button>
       </div>

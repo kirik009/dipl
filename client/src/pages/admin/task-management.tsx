@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Exercise } from "@shared/schema";
+import { Exercise, Task } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -19,32 +19,44 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, Pencil, Trash2, Search, FilePlus } from "lucide-react";
 
-export default function ExerciseManagement() {
+export default function TaskManagement() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [difficultyFilter, setDifficultyFilter] = useState("all");
-  const [grammarTopicFilter, setGrammarTopicFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [exerciseToDelete, setExerciseToDelete] = useState<Exercise | null>(null);
   const itemsPerPage = 10;
 
   // Fetch exercises
-  const { data: exercises, isLoading, error } = useQuery<Exercise[]>({
-    queryKey: ["/api/exercises"],
+  const { data: tasks, isLoading, error } = useQuery<Task[]>({
+    queryKey: ["/api/tasks"],
   });
 
-  // Fetch grammar topics for filtering
-  const { data: grammarTopics } = useQuery({
-    queryKey: ["/api/grammar-topics"],
-    queryFn: async () => {
-      const response = await fetch("/api/grammar-topics");
-      if (!response.ok) throw new Error("Failed to fetch");
-      return response.json();
+
+  // Delete exercise mutation
+  const deleteTaskMutation = useMutation({
+    mutationFn: async (taskId: number) => {
+      await apiRequest("DELETE", `/api/tasks/${taskId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      toast({
+        title: " Task deleted",
+        description: "The task has been successfully deleted.",
+      });
+      setTaskToDelete(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Deletion failed",
+        description: error.message,
+        variant: "destructive",
+      });
     },
   });
 
-  // Delete exercise mutation
+ 
   const deleteExerciseMutation = useMutation({
     mutationFn: async (exerciseId: number) => {
       await apiRequest("DELETE", `/api/exercises/${exerciseId}`);
@@ -65,25 +77,26 @@ export default function ExerciseManagement() {
       });
     },
   });
-
-  // Handle search and filtering
-  const filteredExercises = exercises
-    ? exercises.filter((exercise) => {
-        const matchesSearch =
-          exercise.correctSentence.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          exercise.translation.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesDifficulty = difficultyFilter === "all" || exercise.difficulty === difficultyFilter;
-        const matchesGrammarTopic = grammarTopicFilter === "all" || exercise.grammarTopic === grammarTopicFilter;
-        return matchesSearch && matchesDifficulty && matchesGrammarTopic;
-      })
+  
+  const totalPages = tasks ? Math.ceil(tasks.length / itemsPerPage) : 0;
+  const paginatedTasks = tasks
+    ? tasks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
     : [];
 
-  // Handle pagination
-  const totalPages = Math.ceil(filteredExercises.length / itemsPerPage);
-  const paginatedExercises = filteredExercises.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const handleDeleteTask = (task: Task) => {
+    setTaskToDelete(task);
+  };
+
+  const confirmDeleteTask = () => {
+    if (taskToDelete) {
+      deleteTaskMutation.mutate(taskToDelete.id);
+    }
+  };
+
+  const handleEditTask = (taskId: number) => {
+    navigate(`/admin/tasks/${taskId}/edit`);
+  };
+
 
   const handleDeleteExercise = (exercise: Exercise) => {
     setExerciseToDelete(exercise);
@@ -98,7 +111,7 @@ export default function ExerciseManagement() {
   const handleEditExercise = (exerciseId: number) => {
     navigate(`/admin/exercises/${exerciseId}/edit`);
   };
-
+  
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -129,36 +142,11 @@ export default function ExerciseManagement() {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
         </div>
         <div className="flex space-x-2">
-          <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
-            <SelectTrigger className="w-36">
-              <SelectValue placeholder="All Difficulties" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Все уровни</SelectItem>
-              <SelectItem value="beginner">Начинающий</SelectItem>
-              <SelectItem value="intermediate">Средний</SelectItem>
-              <SelectItem value="advanced">Продвинутый</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={grammarTopicFilter} onValueChange={setGrammarTopicFilter}>
-            <SelectTrigger className="w-44">
-              <SelectValue placeholder="All Grammar Topics" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Все темы</SelectItem>
-              {grammarTopics?.map((topic: any) => (
-                <SelectItem key={topic.id} value={topic.name}>
-                  {topic.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
+       
           <Button asChild>
-            <Link href="/admin/exercises/new">
+            <Link href="/admin/tasks/new">
               <FilePlus className="mr-2 h-4 w-4" />
-              Добавить упражнение
+              Добавить задание
             </Link>
           </Button>
         </div>
@@ -169,23 +157,84 @@ export default function ExerciseManagement() {
         <table className="min-w-full bg-white">
           <thead className="bg-gray-100">
             <tr>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Название</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ограничение по времени </th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Количество попыток </th>
+            
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 w-full ">
+         
+            {paginatedTasks.map((task) => (
+                < >
+              <tr key={task.id}>
+                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
+                  {task.name}
+                </td>
+                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
+                  {task.timeConstraint}
+                </td>
+                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
+                {task.triesNumber}
+                </td>
+              
+            
+                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEditTask(task.id)}
+                    className="text-primary hover:text-primary-600 mr-2"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteTask(task)}
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </td>
+              </tr>
+              
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+               {/* {exercises &&  exercises.filter(exe => exe.task_id === task.id).length !== 0 && <tr >
+                <td colspan="4 ">
+                <div className="overflow-x-auto">
+        <table className="bg-white w-full">
+          <thead className="bg-gray-100">
+            <tr>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Перевод</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Предложение</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Темы</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Сложность</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {paginatedExercises.map((exercise) => (
+            {exercises && exercises.filter(exe => exe.task_id === task.id).map((exercise) => (
               <tr key={exercise.id}>
-                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
+              <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
                   {exercise.translation}
                 </td>
                 <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
                   {exercise.correctSentence}
                 </td>
-                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">{exercise.grammarTopic}</td>
                 <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 capitalize">
                   <span
                     className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -222,9 +271,28 @@ export default function ExerciseManagement() {
           </tbody>
         </table>
       </div>
+                </td>
+            </tr>
 
+        } */}
+
+
+
+
+
+
+
+
+
+              </>
+            ))} 
+          </tbody>
+        </table>
+
+      </div>
+            
       {/* Empty state */}
-      {paginatedExercises.length === 0 && (
+      {paginatedTasks.length === 0 && (
         <div className="text-center py-12 bg-gray-50 rounded-md">
           <p className="text-gray-500">No exercises found matching your criteria.</p>
         </div>
@@ -236,9 +304,9 @@ export default function ExerciseManagement() {
           <p className="text-sm text-gray-600">
             Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
             <span className="font-medium">
-              {Math.min(currentPage * itemsPerPage, filteredExercises.length)}
+              {tasks && Math.min(currentPage * itemsPerPage, tasks.length)}
             </span>{" "}
-            of <span className="font-medium">{filteredExercises.length}</span> results
+            of <span className="font-medium">{tasks && tasks.length}</span> results
           </p>
           <div className="flex space-x-1">
             <Button
@@ -288,8 +356,34 @@ export default function ExerciseManagement() {
         </div>
       )}
 
-      {/* Delete Exercise Confirmation */}
+      {/* Delete Task Confirmation */}
       <AlertDialog 
+        open={!!taskToDelete} 
+        onOpenChange={(open) => !open && setTaskToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this exercise and all associated user progress. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteTask}
+              className="bg-red-500 text-white hover:bg-red-600"
+              disabled={deleteTaskMutation.isPending}
+            >
+              {deleteTaskMutation.isPending ? "Deleting..." : "Delete Task"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
+       {/* Delete Exercise Confirmation */}
+       <AlertDialog 
         open={!!exerciseToDelete} 
         onOpenChange={(open) => !open && setExerciseToDelete(null)}
       >
@@ -315,3 +409,7 @@ export default function ExerciseManagement() {
     </div>
   );
 }
+
+
+
+

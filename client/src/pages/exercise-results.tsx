@@ -9,6 +9,7 @@ import { navigate } from "wouter/use-browser-location";
 import { toast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
+import { useEffect, useState } from "react";
 
 export default function ExerciseResults() {
   const { taskId, progressId, exerciseId, seq} = useParams<{taskId : string, progressId: string, exerciseId: string, seq: string}>();
@@ -18,34 +19,38 @@ export default function ExerciseResults() {
   const isSkipped = searchParams.get('skipped') === 'true';
 
 
-     const { data: prog } = useQuery<TaskProgress>({
-        queryKey: [`/api/task_prog/${progressId}`],
-        queryFn: async () => {
-            const response = await fetch(`/api/task_prog/${progressId}`);
-            if (!response.ok) throw new Error("Failed to fetch tasks");
-            return response.json();
-          },
-      });
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const stored = localStorage.getItem("timeLeft");
+    return stored ? parseInt(stored, 10) : 0;
+  });
 
 
-  const { data: exercise, isLoading, error } = useQuery<Exercise>({
+
+
+  const { data: exercise, isLoading: exerciseLoading, error: exerciseError } = useQuery<Exercise>({
     queryKey: [`/api/task_exercises/${taskId}/seq/${seq}`],
     queryFn: async () => {
         const response = await fetch(`/api/task_exercises/${taskId}/seq/${seq}`);
         if (!response.ok) throw new Error("Failed to fetch exercises");
         return response.json();
       },
+      staleTime: 0,           
+  refetchOnMount: true, 
   }); 
-   const { data: task } = useQuery<Task>({
+   const { data: task, isLoading: taskLoading, error: taskError } = useQuery<Task>({
       queryKey: [`/api/tasks/${taskId}`],
       queryFn: async () => {
           const response = await fetch(`/api/tasks/${taskId}`);
           if (!response.ok) throw new Error("Failed to fetch tasks");
           return response.json();
         },
+        staleTime: 0,          
+  refetchOnMount: true, 
     });
 
-
+    const  isLoading = exerciseLoading || taskLoading;
+    const error = taskError || exerciseError ;
+    
   const nextExerciseId = parseInt(exerciseId) + 1;
   const nextSeq = parseInt(seq) + 1;
   type FormValues = z.infer<typeof insertTaskProgressSchema>;
@@ -71,6 +76,22 @@ export default function ExerciseResults() {
     },
   });
 
+
+  useEffect(() => {
+    if (timeLeft <= 0) {
+      updateTaskMutation.mutate( 
+        {}
+     )
+      
+    }
+  
+    const timer = setTimeout(() => {
+      setTimeLeft(prev => prev - 1000);
+    }, 1000);
+  
+    return () => clearTimeout(timer);
+  }, [timeLeft]);
+  
   const handleComplete = () => {
     if (task && nextSeq >=  Number(task.exercisesNumber)) {
       updateTaskMutation.mutate( 
@@ -78,7 +99,10 @@ export default function ExerciseResults() {
       )
       
 }
-  
+ else {
+  localStorage.setItem("timeLeft", String(timeLeft));
+  navigate(`/tasks/${taskId}/prog/${progressId}/exercises/${nextExerciseId}/seq/${nextSeq}`)
+ } 
 }
   if (isLoading) {
     return (
@@ -114,7 +138,18 @@ export default function ExerciseResults() {
   return (
     <>
       <Navbar />
+      
       <main className="container mx-auto pt-20 pb-12 px-4">
+      <p className="text-lg text-gray-600 mb-8">{
+(() =>  {
+  const totalSeconds = Math.floor(timeLeft / 1000); 
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(hours).length === 1 ? `0${hours}` : hours}:${String(minutes).length === 1 ? `0${minutes}` : minutes}:${String(seconds).length === 1 ? `0${seconds}` : seconds}`
+})()
+}
+</p>
         <div className="py-16">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -162,19 +197,17 @@ export default function ExerciseResults() {
                 </div>
                 
                 <div className="flex justify-center">
-                  
-                  <Button asChild 
-                  onClick={handleComplete}>
-
-                    {(task && nextSeq >=  Number(task.exercisesNumber)) ? <p>
-                    Завершить</p>
+                {(task && nextSeq >=  Number(task.exercisesNumber)) ? 
+                  <button
+                  onClick={handleComplete}>      
+                    Завершить
+                    </button>
                      : 
-                     <WouterLink href={`/tasks/${taskId}/prog/${progressId}/exercises/${nextExerciseId}/seq/${nextSeq}`}>
-                      Следующее 
-                    </WouterLink>
-                   
-}
-                  </Button>
+                     <button
+                  onClick={handleComplete}>      
+                    Следующее
+                    </button>
+                  }
                 </div>
               </div>
             </div>

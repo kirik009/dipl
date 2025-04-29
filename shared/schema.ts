@@ -57,10 +57,10 @@ export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  createdBy: integer("created_by").references(() => users.id),
-  triesNumber: integer("tries_number"),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  triesNumber: integer("tries_number").notNull(),
   exercisesNumber: integer("exercises_number"),
-  timeConstraint: text("time_constraint"),
+  timeConstraint: text("time_constraint").notNull(),
 });
 
 export const taskProgress = pgTable("task_progress", {
@@ -94,11 +94,14 @@ export const insertExerciseSchema = createInsertSchema(exercises).pick({
   grammarExplanation: true,
   tags: true,
   createdBy: true,
+  task_id: true,
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).pick({
   name: true,
   createdBy: true,
+  triesNumber: true,
+  timeConstraint: true,
 });
 
 export const insertExerciseProgressSchema = createInsertSchema(exerciseProgress).pick({

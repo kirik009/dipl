@@ -21,7 +21,7 @@ export default function TasksPage() {
   const itemsPerPage = 10;
 
   // Fetch exercises
-  const { data: tasks, isLoading, error } = useQuery<Task[]>({
+  const { data: tasks, isLoading, error } = useQuery<(Task & { creatorFullName: string | null })[]>({
     queryKey: ["/api/tasks"],
     queryFn: async () => {
         const response = await fetch("/api/tasks");
@@ -63,13 +63,13 @@ export default function TasksPage() {
   });
 
   // Handle search and filtering
-  const filteredTasks = tasks
-    ? tasks.filter((task) => {
-        const matchesSearch =
-          task.name.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesSearch ;
-      })
-    : [];
+  const filteredTasks = tasks?.filter((task) => {
+    const search = searchQuery.toLowerCase();
+    return (
+      task.name.toLowerCase().includes(search) ||
+      task.creatorFullName?.toLowerCase().includes(search)
+    );
+  }) ?? [];
 
   // Handle pagination
   const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
@@ -78,19 +78,6 @@ export default function TasksPage() {
     currentPage * itemsPerPage
   );
 
-  const handleDeleteTask = (task: Task) => {
-    setTaskToDelete(task);
-  };
-
-  const confirmDeleteTask = () => {
-    if (taskToDelete) {
-      deleteTaskMutation.mutate(taskToDelete.id);
-    }
-  };
-
-  const handleEditTask = (exerciseId: number) => {
-    navigate(`/admin/tasks/${exerciseId}/edit`);
-  };
 
   if (isLoading) {
     return (
@@ -152,10 +139,8 @@ export default function TasksPage() {
                 </a>
                 </td>
                 <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
-                  {task.createdBy}
+                  {task.creatorFullName}
                 </td>       
-            
-               
               </tr>
             ))}
           </tbody>

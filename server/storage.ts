@@ -30,7 +30,7 @@ getTaskExercise(task_id?: number): Promise<Exercise>;
 getTaskExercises(task_id?: number): Promise<Exercise[]>;
 // Task methods
 getTask(id: number): Promise<Task | undefined>;
-getTasks(): Promise<Task[]>;
+getTasks(): Promise<(Task & { creatorFullName: string | null })[]>;
 createTask(exercise: InsertTask): Promise<Task>;
 updateTask(id: number, exercise: Partial<InsertTask>): Promise<Task | undefined>;
 deleteTask(id: number): Promise<void>;
