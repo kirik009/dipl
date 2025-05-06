@@ -24,12 +24,15 @@ getExercises(difficulty?: string, grammarTopic_id?: number): Promise<Exercise[]>
 createExercise(exercise: InsertExercise): Promise<Exercise>;
 updateExercise(id: number, exercise: Partial<InsertExercise>): Promise<Exercise | undefined>;
 deleteExercise(id: number): Promise<void>;
+deleteExercises(): Promise<void>;
+getTaskExercise(task_id?: number, seq?: number): Promise<Exercise>;
 
-getTaskExercise(task_id?: number): Promise<Exercise>;
-
-getTaskExercises(task_id?: number): Promise<Exercise[]>;
+getTaskExercises(task_id?: number): Promise<(Exercise & { topicName: string | null })[]>;
+getNewTaskExercises(): Promise<Exercise[]>;
+assignTaskIdToUnassignedExercises(task_id?: number): Promise<number>
 // Task methods
 getTask(id: number): Promise<Task | undefined>;
+getLatestTask(id: number): Promise<Task | undefined>;
 getTasks(): Promise<(Task & { creatorFullName: string | null })[]>;
 createTask(exercise: InsertTask): Promise<Task>;
 updateTask(id: number, exercise: Partial<InsertTask>): Promise<Task | undefined>;
@@ -64,8 +67,8 @@ CreateTaskProgress(progress: InsertTaskProgress): Promise<TaskProgress>;
 // Grammar topic methods
 getGrammarTopics(): Promise<GrammarTopic[]>;
 getGrammarTopic(id: number): Promise<GrammarTopic | undefined>;
-createGrammarTopic(topic: InsertGrammarTopic): Promise<GrammarTopic>;
-
+createGrammarTopic(): Promise<GrammarTopic>;
+updateGrammarTopic(id: number, topic: Partial<InsertGrammarTopic>): Promise<GrammarTopic | undefined>;
 // Session store
 sessionStore: session.Store;
 }

@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 
 export function Navbar() {
   const { user, logoutMutation } = useAuth();
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
 

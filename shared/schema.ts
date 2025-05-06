@@ -25,13 +25,13 @@ export const exercises = pgTable("exercises", {
   id: serial("id").primaryKey(),
   type: text("type").notNull().default("sentence-builder"),
   difficulty: text("difficulty").notNull().default("intermediate"),
-  grammarTopic_id: integer("grammar_topic_id").references(() => grammarTopics.id).notNull(),
+  grammarTopic_id: integer("grammar_topic_id").references(() => grammarTopics.id),
   translation: text("translation").notNull(),
   correctSentence: text("correct_sentence").notNull(),
   words: text("words").array().notNull(),
   grammarExplanation: text("grammar_explanation"),
   tags: text("tags").array(),
-  task_id: integer("task_id").references(() => tasks.id).notNull(),
+  task_id: integer("task_id").references(() => tasks.id),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: integer("created_by").references(() => users.id),
 });
@@ -48,8 +48,8 @@ export const exerciseProgress = pgTable("exercise_progress", {
 
 export const grammarTopics = pgTable("grammar_topics", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  description: text("description"),
+  name: text("name").default(""),
+  description: text("description").default(""),
 });
 
 
@@ -87,8 +87,8 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export const insertExerciseSchema = createInsertSchema(exercises).pick({
   type: true,
   difficulty: true,
-  grammarTopic_id: true,
   translation: true,
+  grammarTopic_id: true,
   correctSentence: true,
   words: true,
   grammarExplanation: true,

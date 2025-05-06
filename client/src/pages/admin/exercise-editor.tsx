@@ -4,13 +4,14 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Exercise, insertExerciseSchema } from "@shared/schema";
+import { Exercise, grammarTopics, insertExerciseSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import mammoth from "mammoth";
 import {
   Form,
   FormControl,
@@ -28,10 +29,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X, Plus, Loader2, ArrowLeft } from "lucide-react";
+import * as pdfjsLib from 'pdfjs-dist';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 const formSchema = insertExerciseSchema.extend({
   newWord: z.string().optional(),
   currentTag: z.string().optional(),
+ 
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -66,7 +74,7 @@ export default function ExerciseEditor() {
     defaultValues: {
       type: "sentence-builder",
       difficulty: "intermediate",
-      grammarTopic_id: 1,
+      grammarTopic_id: 0,
       translation: "",
       correctSentence: "",
       words: [],
@@ -74,6 +82,7 @@ export default function ExerciseEditor() {
       tags: [],
       newWord: "",
       currentTag: "",
+      task_id: null,
     }
   });
   
@@ -88,6 +97,10 @@ export default function ExerciseEditor() {
     }
   }, [exercise, form]);
   
+    useEffect(() => {
+      console.log("form errors:", form.formState.errors);
+    }, [form.formState.errors]);
+
   // Create exercise mutation
   const createExerciseMutation = useMutation({
     mutationFn: async (data: Omit<FormValues, "newWord" | "currentTag">) => {
@@ -95,15 +108,16 @@ export default function ExerciseEditor() {
       return await res.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ["/api/exercises"]});
       toast({
-        title: "Exercise created",
-        description: "The exercise has been successfully created.",
+        title: "Операция выполнена",
+        description: "Предложение успешно создано.",
       });
-      navigate("/admin/exercises");
+      window.history.back()
     },
     onError: (error: Error) => {
       toast({
-        title: "Creation failed",
+        title: "Создание не выполнено",
         description: error.message,
         variant: "destructive",
       });
@@ -117,15 +131,16 @@ export default function ExerciseEditor() {
       return await res.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: ["/api/exercises"]});
       toast({
-        title: "Exercise updated",
-        description: "The exercise has been successfully updated.",
+        title: "Операция выполнена",
+        description: "Предложение успешно обновлено",
       });
-      navigate("/admin/exercises");
+      window.history.back();
     },
     onError: (error: Error) => {
       toast({
-        title: "Update failed",
+        title: "Обновление не выполнено",
         description: error.message,
         variant: "destructive",
       });
@@ -175,6 +190,63 @@ export default function ExerciseEditor() {
   };
   
   const isLoading = isLoadingExercise || isLoadingTopics;
+  
+  const extractTextFromPdf = async (arrayBuffer: ArrayBuffer) => {
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = "";
+  
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const strings = content.items.map((item: any) => item.str);
+      fullText += strings.join(" ") + "\n";
+    }
+    
+    return fullText;
+  };
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, formName: "translation" | 'correctSentence') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+  
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+  
+    try {
+      let text = "";
+  
+      if (fileExtension === "pdf") {
+        const arrayBuffer = await file.arrayBuffer();
+        
+        text = await extractTextFromPdf(arrayBuffer);
+      } else if (fileExtension === "docx") {
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        text = result.value;
+      } else if (fileExtension === "txt") {
+        text = await file.text();
+      } else {
+        toast({
+          title: "Unsupported file type",
+          description: "Only PDF, DOCX, and TXT files are supported.",
+          variant: "destructive",
+        });
+        return;
+      }
+      console.log(text)
+      // Trim and set the translation
+      form.setValue(formName, text.trim());
+      
+      if (formName == "correctSentence") {
+        const words = text.trim().toLowerCase().split(" ");
+        form.setValue("words", words);
+      }
+    } catch (err: any) {
+      toast({
+        title: "Error reading file",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
   
   if (isLoading) {
     return (
@@ -248,29 +320,32 @@ export default function ExerciseEditor() {
               />
               
               <FormField
-                control={form.control}
-                name="grammarTopic_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Grammar Topic</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={String(field.value)}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select grammar topic" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {grammarTopics?.map((topic: any) => (
-                          <SelectItem key={topic.id} value={topic.name}>
-                            {topic.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+  control={form.control}
+  name="grammarTopic_id"
+  render={({ field }) => (
+    <FormItem>
+      <FormLabel>Grammar Topic</FormLabel>
+      <Select
+        onValueChange={(value) => field.onChange(Number(value))}
+        defaultValue={field.value ? String(field.value) : undefined}
+      >
+        <FormControl>
+          <SelectTrigger>
+            <SelectValue placeholder="Select grammar topic" />
+          </SelectTrigger>
+        </FormControl>
+        <SelectContent>
+          {grammarTopics?.map((topic: any) => (
+            <SelectItem key={topic.id} value={String(topic.id)}>
+              {topic.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <FormMessage />
+    </FormItem>
+  )}
+/>
               
               <div>
                 <FormLabel>Tags</FormLabel>
@@ -306,6 +381,11 @@ export default function ExerciseEditor() {
               </div>
             </div>
             
+
+            <div className="mb-4">
+              <FormLabel>Можно задать перевод файлом (.pdf, .docx, .txt)</FormLabel>
+              <Input type="file" accept=".pdf,.docx,.txt" onChange={(e) => handleFileUpload(e, "translation")} />
+            </div>
             <FormField
               control={form.control}
               name="translation"
@@ -322,7 +402,11 @@ export default function ExerciseEditor() {
                 </FormItem>
               )}
             />
-            
+
+               <div className="mb-4">
+              <FormLabel>Можно задать предложение файлом (.pdf, .docx, .txt)</FormLabel>
+              <Input type="file" accept=".pdf,.docx,.txt" onChange={(e) => handleFileUpload(e, "correctSentence")} />
+            </div>
             <FormField
               control={form.control}
               name="correctSentence"

@@ -27,6 +27,7 @@ import {
   InsertTaskProgress,
   taskProgress
 } from "@shared/schema";
+import { isNull, or } from "drizzle-orm";
 
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
@@ -127,7 +128,7 @@ export class DatabaseStorage implements IStorage {
             eq(exercises.difficulty, difficulty),
             eq(exercises.grammarTopic_id, grammarTopic_id)
           )
-        );
+        ).orderBy(exercises.id);
       } else if (difficulty) {
         return await db.select().from(exercises).where(eq(exercises.difficulty, difficulty));
       } else if (grammarTopic_id) {
@@ -179,6 +180,14 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
+  async deleteExercises(): Promise<void> {
+    try {
+      await db.delete(exercises).where(isNull(exercises.task_id));
+    } catch (error) {
+      console.error("Error deleting exercise:", error);
+      throw new Error("Failed to delete exercise");
+    }
+  }
 
   async getTask(id: number): Promise<Task | undefined> {
     try {
@@ -233,21 +242,74 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getTaskExercises(task_id?: number, seq?: number): Promise<Exercise[]> {
-    try {  
-      if (task_id) {
-        const exers = await db.select().from(exercises).where(
-          eq(exercises.task_id, task_id));
-        return exers;
-      } 
-      
-      const [exer] = await db.select().from(exercises);
+  async getTaskExercises(task_id?: number): Promise<(Exercise & { topicName: string | null })[]> {
+    try {
+      if (typeof task_id !== "number" || isNaN(task_id)) {
+        throw new Error("Invalid task_id: must be a number");
+      }
+      if (task_id !== undefined) {
+        const query = db
+          .select({
+            id: exercises.id,
+            type: exercises.type,
+            difficulty: exercises.difficulty,
+            grammarTopic_id: exercises.grammarTopic_id,
+            translation: exercises.translation,
+            correctSentence: exercises.correctSentence,
+            words: exercises.words,                   
+            grammarExplanation: exercises.grammarExplanation,
+            tags: exercises.tags,
+            task_id: exercises.task_id,
+            createdAt: exercises.createdAt,
+            createdBy: exercises.createdBy,
+            topicName: grammarTopics.name       
+          })
+          .from(exercises)
+          .leftJoin(grammarTopics, eq(exercises.grammarTopic_id, grammarTopics.id))
+          .where(
+            or(
+              eq(exercises.task_id, task_id),
+              isNull(exercises.task_id)
+            )
+          );
+          console.log(query.toSQL()); 
+        const exers = await query;
+          return exers;
+        
+      }
+  
+      return [];
+    } catch (error) {
+      console.error("Error fetching task exercises:", error);
+      throw new Error("Failed to get task exercises");
+    }
+  }
 
-      return [exer];
+
+  async getNewTaskExercises(): Promise<Exercise[]> {
+    try {   
+        const exers = await db
+          .select()
+          .from(exercises)
+          .where(   
+              isNull(exercises.task_id)
+          );
+        return exers;
+    
     } catch (error) {
       console.error("Error getting exercises:", error);
       throw new Error("Failed to get exercises");
     }
+  }
+
+
+  async assignTaskIdToUnassignedExercises(taskId: number): Promise<number> {
+    const result = await db
+      .update(exercises)
+      .set({ task_id: taskId })
+      .where(isNull(exercises.task_id));
+  
+    return result.rowCount ?? 0; // зависит от используемого драйвера
   }
 
   async getTaskExerciseProgs(taskProgId?: number): Promise<ExerciseProgress[]> {
@@ -460,36 +522,77 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getGrammarTopics(): Promise<GrammarTopic[]> {
-    try {
-      return await db.select().from(grammarTopics);
-    } catch (error) {
-      console.error("Error getting grammar topics:", error);
-      return [];
-    }
-  }
 
-  async getGrammarTopic(id: number): Promise<GrammarTopic | undefined> {
-    try {
-      const [topic] = await db.select().from(grammarTopics).where(eq(grammarTopics.id, id));
-      return topic;
-    } catch (error) {
-      console.error("Error getting grammar topic:", error);
-      return undefined;
-    }
-  }
 
-  async createGrammarTopic(topic: InsertGrammarTopic): Promise<GrammarTopic> {
-    try {
-      const [newTopic] = await db
-        .insert(grammarTopics)
-        .values(topic)
-        .returning();
-      
-      return newTopic;
-    } catch (error) {
-      console.error("Error creating grammar topic:", error);
-      throw new Error("Failed to create grammar topic");
-    }
+async getLatestTask(): Promise<Task | undefined> {
+  const [task] = await db
+    .select()
+    .from(tasks)
+    .orderBy(desc(tasks.id))
+    .limit(1);
+    
+  return task;
+}
+
+
+
+async getGrammarTopics(): Promise<GrammarTopic[]> {
+  try {
+    return await db.select().from(grammarTopics).orderBy(grammarTopics.id);
+  } catch (error) {
+    console.error("Error getting grammar topics:", error);
+    return [];
   }
 }
+
+async getGrammarTopic(id: number): Promise<GrammarTopic | undefined> {
+  try {
+    const [topic] = await db.select().from(grammarTopics).where(eq(grammarTopics.id, id));
+    return topic;
+  } catch (error) {
+    console.error("Error getting grammar topic:", error);
+    return undefined;
+  }
+}
+
+async createGrammarTopic(): Promise<GrammarTopic> {
+  try {
+    const [newTopic] = await db
+      .insert(grammarTopics)
+      .values({})
+      .returning();
+    
+    return newTopic;
+  } catch (error) {
+    console.error("Error creating grammar topic:", error);
+    throw new Error("Failed to create grammar topic");
+  }
+}
+
+
+async deleteGrammarTopic(id: number): Promise<void> {
+  try {
+    await db.delete(grammarTopics).where(eq(grammarTopics.id, id));
+  } catch (error) {
+    console.error("Error deleting grammar topic:", error);
+    throw new Error("Failed to delete grammar topic");
+  }
+}
+
+async updateGrammarTopic(id: number, topicUpdate: Partial<InsertGrammarTopic>): Promise<GrammarTopic | undefined> {
+  try {
+    const [updatedTopic] = await db
+      .update(grammarTopics)
+      .set(topicUpdate)
+      .where(eq(grammarTopics.id, id))
+      .returning();
+    
+    return updatedTopic;
+  } catch (error) {
+    console.error("Error updating exercise:", error);
+    return undefined;
+  }
+}
+}
+
+

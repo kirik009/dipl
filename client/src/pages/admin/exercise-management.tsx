@@ -73,8 +73,8 @@ export default function ExerciseManagement() {
           exercise.correctSentence.toLowerCase().includes(searchQuery.toLowerCase()) ||
           exercise.translation.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesDifficulty = difficultyFilter === "all" || exercise.difficulty === difficultyFilter;
-        const matchesGrammarTopic = grammarTopicFilter === "all" || exercise.grammarTopic === grammarTopicFilter;
-        return matchesSearch && matchesDifficulty && matchesGrammarTopic;
+        // const matchesGrammarTopic = grammarTopicFilter === "all" || exercise.grammarTopic_id === grammarTopicFilter;
+        return matchesSearch && matchesDifficulty;
       })
     : [];
 
@@ -185,7 +185,7 @@ export default function ExerciseManagement() {
                 <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
                   {exercise.correctSentence}
                 </td>
-                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">{exercise.grammarTopic}</td>
+                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">{exercise.grammarTopic_id}</td>
                 <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 capitalize">
                   <span
                     className={`px-2 py-1 text-xs font-medium rounded-full ${

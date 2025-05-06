@@ -30,7 +30,7 @@ export function ProtectedRoute({
   }
 
   // For admin routes
-  if (path.startsWith("/admin") && user.role !== "admin") {
+  if (path.startsWith("/admin") && !['admin', 'teacher'].includes(user.role)) {
     return (
       <Route path={path}>
         <Redirect to="/" />

@@ -28,6 +28,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X, Plus, Loader2, ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type FormValues = z.infer<typeof insertTaskSchema>;
 
@@ -40,17 +51,26 @@ export default function TaskEditor() {
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [exerciseToDelete, setExerciseToDelete] = useState<Exercise | null>(null);
   const isEditing = !!id && id !== "new";
-  
+  const {user} = useAuth();
   const [cursorPos, setCursorPos] = useState<number>(0); // Состояние для хранения позиции курсора
   const timeInputRef = useRef<HTMLInputElement | null>(null);
 
-  const { data: exercises, isLoading: isLoadingExercise, error } = useQuery<Exercise[]>({
+
+  const { data: exercises, isLoading: isLoadingExercise, error } = isEditing ? useQuery<(Exercise & { topicName: string | null })[]>({
     queryKey: [`/api/task_exercises/${id}`],
+    enabled: isEditing,
+  }) : 
+  useQuery<(Exercise & { topicName: string | null })[]>({
+    queryKey: [`/api/new_task_exercises`]
   });
-  
+ 
   const { data: task} = useQuery<Task>({
     queryKey: [`/api/tasks/${id}`],
     enabled: isEditing,
+  });
+
+  const { data: newTask} = useQuery<Task>({
+    queryKey: [`/api/NewTask`]
   });
   
   // Form definition
@@ -59,10 +79,11 @@ export default function TaskEditor() {
     defaultValues: {
       name: "",
       triesNumber:0,
-      timeConstraint: "0",
+      timeConstraint: "00:00:00",
+      createdBy: user?.id,
     }
   });
-  
+
   // Update form values when exercise data is loaded
   useEffect(() => {
     if (task) {
@@ -83,6 +104,7 @@ export default function TaskEditor() {
         title: "Task created",
         description: "The task has been successfully created.",
       });
+       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });  
       navigate("/tasks");
     },
     onError: (error: Error) => {
@@ -94,7 +116,37 @@ export default function TaskEditor() {
     },
   });
   
-  // Update exercise mutation
+    // Update exercises task_id mutation
+    const updateExercisesMutation =  useMutation({
+      mutationFn: async () => {
+        if (isEditing) {
+          const res = await apiRequest("PUT", `/api/task_exercises/assign/${newTask?.id}`);
+        return await res.json();
+      }
+        else {
+          const res = await apiRequest("PUT", `/api/task_exercises/assign/${id}`);
+        return await res.json();
+      }
+        
+      },
+      onSuccess: () => {
+        toast({
+          title: "Exercise updated",
+          description: "The exercise has been successfully upd.",
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+        navigate("/admin/tasks");
+      },
+      onError: (error: Error) => {
+        toast({
+          title: "Update failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      },
+    });
+
+  // Update task mutation
   const updateTaskMutation =  useMutation({
     mutationFn: async (data: FormValues) => {
       const res = await apiRequest("PUT", `/api/tasks/${id}`, data);
@@ -103,9 +155,10 @@ export default function TaskEditor() {
     onSuccess: () => {
       toast({
         title: "Exercise updated",
-        description: "The exercise has been successfully updated.",
+        description: "The exercise has been successfully upda.",
       });
-      navigate("/tasks");
+      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+      navigate("/admin/tasks");
     },
     onError: (error: Error) => {
       toast({
@@ -116,33 +169,15 @@ export default function TaskEditor() {
     },
   });
    
-  const deleteTaskMutation = useMutation({
-    mutationFn: async (taskId: number) => {
-      await apiRequest("DELETE", `/api/tasks/${taskId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      toast({
-        title: "Task deleted",
-        description: "The task has been successfully deleted.",
-      });
-      setTaskToDelete(null);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Deletion failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
     const deleteExerciseMutation = useMutation({
       mutationFn: async (exerciseId: number) => {
         await apiRequest("DELETE", `/api/exercises/${exerciseId}`);
       },
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
+        queryClient.invalidateQueries({
+          queryKey: [isEditing ? `/api/task_exercises/${id}` : `/api/new_task_exercises`],
+        });
         toast({
           title: "Exercise deleted",
           description: "The exercise has been successfully deleted.",
@@ -157,10 +192,6 @@ export default function TaskEditor() {
         });
       },
     });
-
-    const handleDeleteTask = (task: Task) => {
-      setTaskToDelete(task);
-    };
   
   
     const handleEditExercise = (exerciseId: number) => {
@@ -181,12 +212,13 @@ export default function TaskEditor() {
   const onSubmit = (values: FormValues) => {
     // Remove the extra fields we added for UI purposes
     const {...taskData } = values;
-    
+   
     if (isEditing) {
       updateTaskMutation.mutate(taskData);
     } else {
       createTaskMutation.mutate(taskData);
     }
+    updateExercisesMutation.mutate();
   };
   
   const isLoading = isLoadingExercise;
@@ -248,21 +280,18 @@ export default function TaskEditor() {
   return (
     <div>
       <div className="bg-gray-100 px-6 py-4 flex items-center border-b border-gray-200">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/admin/exercises")} className="mr-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate("/admin/tasks")} className="mr-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Exercises
+          Назад
         </Button>
         <h2 className="text-xl font-semibold">
-          {isEditing ? "Edit Exercise" : "Create New Exercise"}
+          {isEditing ? "Редактирование упражнения" : "Создание нового упражнения"}
         </h2>
       </div>
       
       <div className="p-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            
-          
-            
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">     
             <FormField
               control={form.control}
               name="name"
@@ -270,7 +299,7 @@ export default function TaskEditor() {
                 <FormItem>
                   <FormLabel>Название </FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter the Russian translation" />
+                    <Input {...field} placeholder="Введите название" />
                   </FormControl>
                   
                   <FormMessage />
@@ -285,7 +314,9 @@ export default function TaskEditor() {
                 <FormItem>
                   <FormLabel>Количество попыток </FormLabel>
                   <FormControl>
-                    <Input type="number"{...field} placeholder="Введите 0, если хотите неограниченное количество попыток" />
+                    <Input type="number"{...field} 
+                     onChange={(e) => field.onChange(Number(e.target.value))}
+                     placeholder="Введите 0, если хотите неограниченное количество попыток" />
                   </FormControl>
                   
                   <FormMessage />
@@ -341,7 +372,7 @@ export default function TaskEditor() {
                 <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
                   {exercise.correctSentence}
                 </td>
-                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">{exercise.grammarTopic_id}</td>
+                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">{exercise.topicName}</td>
                 <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 capitalize">
                   <span
                     className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -359,12 +390,13 @@ export default function TaskEditor() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleEditExercise(exercise.id)}
+                    onClick={() => { handleEditExercise(exercise.id)}}
                     className="text-primary hover:text-primary-600 mr-2"
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
                   <Button
+                  type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => handleDeleteExercise(exercise)}
@@ -380,8 +412,8 @@ export default function TaskEditor() {
       </div>
 }
   <Button
-    type="submit"
-    onClick={() => navigate("/admin/exercises/new")}
+    type="button"
+     onClick={() => navigate(`/admin/exercises/new`)}
     >
       Добавить пример
   </Button>
@@ -389,10 +421,10 @@ export default function TaskEditor() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/tasks")}
+                onClick={() => navigate("/admin/tasks")}
                 className="mr-2"
               >
-                Cancel
+                Отменить
               </Button>
               <Button
                 type="submit"
@@ -408,6 +440,34 @@ export default function TaskEditor() {
           </form>
         </Form>
       </div>
+
+
+
+      {/* Delete Task Confirmation */}
+            <AlertDialog 
+              open={!!exerciseToDelete} 
+              onOpenChange={(open) => !open && setExerciseToDelete(null)}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Это действие удалить предложение. И его нельзя отменить.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Отменить</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={confirmDeleteExercise}
+                    className="bg-red-500 text-white hover:bg-red-600"
+                    disabled={deleteExerciseMutation.isPending}
+                  >
+                    {deleteExerciseMutation.isPending ? "Удаление..." : "Удалить предложение"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+      
     </div>
   );
 }

@@ -22,6 +22,9 @@ export default defineConfig({
         ]
       : []),
   ],
+  optimizeDeps: {
+    include: ['pdfjs-dist/build/pdf.worker.mjs'],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "client", "src"),

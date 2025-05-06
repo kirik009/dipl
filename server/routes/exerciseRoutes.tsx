@@ -51,8 +51,26 @@ export async function exerciseRoutes(app: Express) {
 
       app.get("/api/task_exercises/:id/", async (req, res, next) => {
         try {
-          const taskId = parseInt(req.params.id);
+          const taskId = Number(req.params.id);
+          
           const exercises = await storage.getTaskExercises(taskId);
+          
+          if (!exercises ) {
+            return res.status(404).json({ message: "Exercises for this task not found" });
+          }
+          
+          res.json(exercises);
+        } catch (error) {
+          next(error);
+        }
+      });
+
+
+
+      app.get("/api/new_task_exercises", async (req, res, next) => {
+        try {
+        
+          const exercises = await storage.getNewTaskExercises();
           
           if (!exercises ) {
             return res.status(404).json({ message: "Exercises for this task not found" });
@@ -81,7 +99,7 @@ export async function exerciseRoutes(app: Express) {
 
       app.post("/api/exercises", async (req, res, next) => {
           try {
-            if (!req.isAuthenticated() || req.user.role !== "admin") {
+            if (!req.isAuthenticated() || !['admin', 'teacher'].includes(req.user.role)) {
               return res.status(403).json({ message: "Not authorized" });
             }
             
@@ -103,32 +121,10 @@ export async function exerciseRoutes(app: Express) {
           }
         });
       
-        app.post("/api/tasks", async (req, res, next) => {
-          try {
-            if (!req.isAuthenticated() || req.user.role !== "admin") {
-              return res.status(403).json({ message: "Not authorized" });
-            }
-            
-            const validatedData = insertTaskSchema.parse(req.body);
-            const task = await storage.createTask({
-              ...validatedData,
-              createdBy: req.user.id,
-            });
-            
-            res.status(201).json(task);
-          } catch (error) {
-            if (error instanceof z.ZodError) {
-              return res.status(400).json({ 
-                message: "Validation error", 
-                errors: error.errors 
-              });
-            }
-            next(error);
-          }
-        });
+       
         app.put("/api/exercises/:id", async (req, res, next) => {
             try {
-              if (!req.isAuthenticated() || req.user.role !== "admin") {
+              if (!req.isAuthenticated() || !['admin', 'teacher'].includes(req.user.role)) {
                 return res.status(403).json({ message: "Not authorized" });
               }
               
@@ -152,14 +148,53 @@ export async function exerciseRoutes(app: Express) {
               next(error);
             }
           });
+
+
+
+          app.put("/api/task_exercises/assign/:taskId", async (req, res, next) => {
+            try {
+              if (!req.isAuthenticated() || !['admin', 'teacher'].includes(req.user.role)) {
+                return res.status(403).json({ message: "Not authorized" });
+              }
+          
+              const taskId = parseInt(req.params.taskId);
+              if (isNaN(taskId)) {
+                return res.status(400).json({ message: "Invalid task ID" });
+              }
+          
+              const updatedCount = await storage.assignTaskIdToUnassignedExercises(taskId);
+          
+              res.json({ updatedCount });
+            } catch (error) {
+              next(error);
+            }
+          });
+
+
+
           app.delete("/api/exercises/:id", async (req, res, next) => {
             try {
-              if (!req.isAuthenticated() || req.user.role !== "admin") {
+              if (!req.isAuthenticated() || !['admin', 'teacher'].includes(req.user.role)) {
                 return res.status(403).json({ message: "Not authorized" });
               }
               
               const exerciseId = parseInt(req.params.id);
               await storage.deleteExercise(exerciseId);
+              
+              res.sendStatus(204);
+            } catch (error) {
+              next(error);
+            }
+          });
+
+
+          app.delete("/api/exercises", async (req, res, next) => {
+            try {
+              if (!req.isAuthenticated() || !['admin', 'teacher'].includes(req.user.role)) {
+                return res.status(403).json({ message: "Not authorized" });
+              }
+              
+              await storage.deleteExercises();
               
               res.sendStatus(204);
             } catch (error) {

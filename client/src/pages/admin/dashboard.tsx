@@ -8,13 +8,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
 import TaskManagement from "./task-management";
 import TaskEditor from "./task-editor";
+import GrammarManagement from "./grammar-management";
 
 export default function AdminDashboard() {
   const [location] = useLocation();
   const { user } = useAuth();
-  
+
   // Determine which tab should be active based on the URL
-  let initialTab = "users";
+  let initialTab = user?.role === "admin" ? "users" : "tasks";
   
   if (location.startsWith("/admin/tasks")) {
     initialTab = "tasks";
@@ -47,12 +48,14 @@ else {
     <>
       {/* Admin Tabs */}
       <div className="bg-gray-100 px-6 flex border-b border-gray-200">
+      {user?.role === "admin" &&
         <Link href="/admin/users">
           <a className={`py-4 px-4 font-medium ${activeTab === 'users' ? 'text-primary border-b-2 border-primary' : 'text-gray-600'}`}
              onClick={() => setActiveTab('users')}>
             Пользователи
           </a>
         </Link>
+}
         <Link href="/admin/tasks">
           <a className={`py-4 px-4 font-medium ${activeTab === 'tasks' ? 'text-primary border-b-2 border-primary' : 'text-gray-600'}`}
              onClick={() => setActiveTab('tasks')}>
@@ -71,11 +74,7 @@ else {
       <div className="p-6">
         {activeTab === 'users' && <UserManagement />}
         {activeTab === 'tasks' && <TaskManagement />}
-        {activeTab === 'grammar' && (
-          <div className="py-8 text-center">
-            <h3 className="text-lg font-medium text-gray-500">Grammar Topics Management Coming Soon</h3>
-          </div>
-        )}
+        {activeTab === 'grammar' && <GrammarManagement/>}
       </div>
     </>
   )
@@ -89,11 +88,18 @@ else {
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="bg-gray-800 text-white p-6">
                 <div className="flex justify-between items-center">
+                  {user.role == "admin" ? 
+                  <>
                   <h2 className="font-heading text-2xl font-semibold">Панель администратора</h2>
                   <div className="bg-red-500 px-3 py-1 rounded-full text-sm font-medium">Администратор</div>
-                </div>
-              </div>
-              
+                  </>:   
+                <>
+                <h2 className="font-heading text-2xl font-semibold">Панель преподавателя</h2>
+                <div className="bg-red-500 px-3 py-1 rounded-full text-sm font-medium">Преподаватель</div>
+                </>
+                }
+                  </div>
+              </div>             
               {content}
             </div>
           </div>
