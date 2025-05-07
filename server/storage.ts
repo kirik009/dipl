@@ -20,7 +20,7 @@ getAllUsers(): Promise<User[]>;
 
 // Exercise methods
 getExercise(id: number): Promise<Exercise | undefined>;
-getExercises(difficulty?: string, grammarTopic_id?: number): Promise<Exercise[]>;
+getExercises(grammarTopic_id?: number): Promise<Exercise[]>;
 createExercise(exercise: InsertExercise): Promise<Exercise>;
 updateExercise(id: number, exercise: Partial<InsertExercise>): Promise<Exercise | undefined>;
 deleteExercise(id: number): Promise<void>;

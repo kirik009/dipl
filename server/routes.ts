@@ -34,7 +34,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin user management routes
   app.get("/api/admin/users", async (req, res, next) => {
     try {
-      if (!req.isAuthenticated() || req.user.role !== "admin") {
+      if (!req.isAuthenticated() || !['admin', 'teacher'].includes(req.user.role)) {
         return res.status(403).json({ message: "Not authorized" });
       }
       
@@ -71,7 +71,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (fullName !== undefined) userUpdate.fullName = fullName;
       if (username !== undefined) userUpdate.username = username;
       if (role !== undefined) userUpdate.role = role;
-      if (level !== undefined) userUpdate.level = level;
       if (password !== undefined) userUpdate.password = password; // Внутри storage будет захеширован
   
       const updatedUser = await storage.updateUser(id, userUpdate);

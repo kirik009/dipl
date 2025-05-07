@@ -90,7 +90,6 @@ export function setupAuth(app: Express) {
         password: hashPassword(validatedData.password),
         fullName: validatedData.fullName,
         role: validatedData.role || "user",
-        level: validatedData.level || "beginner",
       });
 
       // Remove password from response

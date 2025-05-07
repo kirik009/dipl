@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Exercise, GrammarTopic, InsertGrammarTopic, Task } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -17,11 +17,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Loader2, Pencil, Trash2, Search, FilePlus } from "lucide-react";
+import { useCreateTopicMutation, useDeleteTopicMutation, useUpdateTopicMutation } from "@/hooks/use-mutate";
 
 export default function GrammarManagement() {
-  const { toast } = useToast();
- 
-   
   
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,7 +31,12 @@ export default function GrammarManagement() {
     queryKey: ["/api/grammar-topics"],
   });
 
-  const [isEditable, setIsEditable] = useState(Array(topics?.length).fill(false));
+  const [isEditable, setIsEditable] = useState<boolean[]>([]);
+  useEffect(() => {
+    if (topics) {
+      setIsEditable(Array(topics.length).fill(false));
+    }
+  }, [topics]);
   
   const toggleEditable = (index: number, id: number, data: InsertGrammarTopic) => {
     if (isEditable[index]) {
@@ -47,73 +50,12 @@ export default function GrammarManagement() {
  
 
   // Delete exercise mutation
-  const deleteTopicMutation = useMutation({
-    mutationFn: async (taskId: number) => {
-      await apiRequest("DELETE", `/api/grammar-topics/${taskId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/grammar-topics"] });
-      toast({
-        title: "Операция выполнена",
-        description: "Грамматическая тема удалена.",
-      });
-      setTopicToDelete(null);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Удаление не выполнено",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const deleteTopicMutation = useDeleteTopicMutation(() => setTopicToDelete(null))
 
-  const updateTopicMutation =  useMutation({
-      mutationFn: async ({ id, data }: { id: number; data: InsertGrammarTopic }) => {
-        
-          const res = await apiRequest("PUT", `/api/grammar-topics/${id}`, data);
-        return await res.json();
-      } 
-      ,
-      onSuccess: () => {
-        toast({
-          title: "Операция выполнена",
-          description: "Грамматическая тема успешно обновлена",
-        });
-        queryClient.invalidateQueries({ queryKey: ["/api/grammar-topics"] });
-     
-      },
-      onError: (error: Error) => {
-        toast({
-          title: "Обновление не выполнено",
-          description: error.message,
-          variant: "destructive",
-        });
-      },
-    });
+  const updateTopicMutation =  useUpdateTopicMutation();
   
 
-    const createTopicMutation = useMutation({
-        mutationFn: async () => {
-          const res = await apiRequest("POST", "/api/grammar-topics");
-          return await res.json();
-        },
-        onSuccess: () => {
-          queryClient.invalidateQueries({queryKey: ["/api/grammar-topics"]});
-          toast({
-            title: "Операция выполнена",
-            description: "Упражнение успешно создано.",
-          });
-          
-        },
-        onError: (error: Error) => {
-          toast({
-            title: "Создание не выполнено",
-            description: error.message,
-            variant: "destructive",
-          });
-        },
-      });
+    const createTopicMutation = useCreateTopicMutation();
 
   const totalPages = topics ? Math.ceil(topics.length / itemsPerPage) : 0;
   const paginatedTopics = topics

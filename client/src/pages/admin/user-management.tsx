@@ -27,6 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Loader2, Pencil, Trash2, Search, UserPlus } from "lucide-react";
+import { useDeleteUserMutation, useUpdateExerciseMutation, useUpdateUserMutation } from "@/hooks/use-mutate";
 
 type UserWithoutPassword = Omit<User, 'password'>;
 
@@ -45,49 +46,10 @@ export default function UserManagement() {
   });
 
   // Delete user mutation
-  const deleteUserMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      await apiRequest("DELETE", `/api/admin/users/${userId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({
-        title: "User deleted",
-        description: "The user has been successfully deleted.",
-      });
-      setUserToDelete(null);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Deletion failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const deleteUserMutation = useDeleteUserMutation( () => setUserToDelete(null))
 
   // Update user mutation
-  const updateUserMutation = useMutation({
-    mutationFn: async (user: Partial<UserWithoutPassword>) => {
-      const res = await apiRequest("PATCH", `/api/admin/users/${user.id}`, user);
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({
-        title: "User updated",
-        description: "The user has been successfully updated.",
-      });
-      setUserToEdit(null);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Update failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const updateUserMutation = useUpdateUserMutation(() => setUserToEdit(null))
 
   // Handle search and filtering
   const filteredUsers = users
@@ -240,7 +202,6 @@ export default function UserManagement() {
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Имя</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Никнейм</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Роль</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Уровень</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
             </tr>
           </thead>
@@ -271,7 +232,7 @@ export default function UserManagement() {
                     {user.role === "user" ? "Student" : user.role === "teacher" ? "Teacher" : "Admin"}
                   </span>
                 </td>
-                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 capitalize">{user.level}</td>
+     
                 <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">
                   <Button
                     variant="ghost"
@@ -410,26 +371,7 @@ export default function UserManagement() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <label htmlFor="edit-level" className="text-sm font-medium">
-                    Уровень
-                  </label>
-                  <Select
-                    value={userToEdit.level}
-                    onValueChange={(value) =>
-                      setUserToEdit({ ...userToEdit, level: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select level" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="beginner">Начинающий</SelectItem>
-                      <SelectItem value="intermediate">Средний</SelectItem>
-                      <SelectItem value="advanced">Продвинутый</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+               
               </div>
               <DialogFooter>
                 <Button
@@ -448,20 +390,20 @@ export default function UserManagement() {
       <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogTitle>Вы уверене?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the user account for{" "}
-              <span className="font-semibold">{userToDelete?.fullName}</span>. This action cannot be undone.
+             Это действие удалит аккаунт у {" "}
+              <span className="font-semibold">{userToDelete?.fullName}</span>. Это действие нельзя отменить.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Отменить</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteUser}
               className="bg-red-500 text-white hover:bg-red-600"
               disabled={deleteUserMutation.isPending}
             >
-              {deleteUserMutation.isPending ? "Deleting..." : "Delete User"}
+              {deleteUserMutation.isPending ? "Удаление..." : "Удалить пользователя"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

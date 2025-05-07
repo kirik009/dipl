@@ -8,10 +8,9 @@ export async function exerciseRoutes(app: Express) {
 // Exercise routes
   app.get("/api/exercises", async (req, res, next) => {
     try {
-      let difficulty = req.query.difficulty as string;
       let grammarTopic_id = Number(req.query.grammarTopic_id);
       
-      const exercises = await storage.getExercises(difficulty, grammarTopic_id);
+      const exercises = await storage.getExercises(grammarTopic_id);
       res.json(exercises);
     } catch (error) {
       next(error);
@@ -49,7 +48,7 @@ export async function exerciseRoutes(app: Express) {
         }
       });
 
-      app.get("/api/task_exercises/:id/", async (req, res, next) => {
+      app.get("/api/task_exercises/:id", async (req, res, next) => {
         try {
           const taskId = Number(req.params.id);
           

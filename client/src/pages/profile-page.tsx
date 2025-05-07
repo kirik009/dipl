@@ -22,7 +22,6 @@ import { Loader2 } from "lucide-react";
 
 const profileUpdateSchema = z.object({
   fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  level: z.string().min(1, "Please select a difficulty level"),
   currentPassword: z.string().optional(),
   newPassword: z.string().min(6, "New password must be at least 6 characters").optional(),
   confirmNewPassword: z.string().optional(),
@@ -68,7 +67,6 @@ const { data: progressStats, isLoading: isLoadingProgress } = useQuery<ProgressS
     resolver: zodResolver(profileUpdateSchema),
     defaultValues: {
       fullName: user?.fullName || "",
-      level: user?.level || "beginner",
       currentPassword: "",
       newPassword: "",
       confirmNewPassword: "",
@@ -131,9 +129,7 @@ const { data: progressStats, isLoading: isLoadingProgress } = useQuery<ProgressS
                   </div>
                   <div className="ml-4">
                     <h2 className="font-heading text-2xl font-semibold">{user.fullName}</h2>
-                    <p className="text-gray-300 capitalize">
-                      {user.level} Level • Role: {user.role}
-                    </p>
+                  
                   </div>
                 </div>
               </div>
@@ -192,34 +188,7 @@ const { data: progressStats, isLoading: isLoadingProgress } = useQuery<ProgressS
                           )}
                         />
                         
-                        <FormField
-                          control={form.control}
-                          name="level"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Уровень</FormLabel>
-                              <Select 
-                                onValueChange={field.onChange} 
-                                defaultValue={field.value}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a difficulty level" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  <SelectItem value="beginner">Начинающий</SelectItem>
-                                  <SelectItem value="intermediate">Средний</SelectItem>
-                                  <SelectItem value="advanced">Продвинутый</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              <FormDescription>
-                                Это определяет сложность заданий, с которыми вы сталкиваетесь.
-                              </FormDescription>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                       
                       </div>
                       
                       <div>

@@ -18,6 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Loader2, Pencil, Trash2, Search, FilePlus } from "lucide-react";
+import { useDeleteExercisesMutation, useDeleteTaskMutation } from "@/hooks/use-mutate";
 
 export default function TaskManagement() {
   const { toast } = useToast();
@@ -31,43 +32,15 @@ export default function TaskManagement() {
   // Fetch exercises
   const { data: tasks, isLoading, error } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
+    
   });
 
 
   // Delete exercise mutation
-  const deleteTaskMutation = useMutation({
-    mutationFn: async (taskId: number) => {
-      await apiRequest("DELETE", `/api/tasks/${taskId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      toast({
-        title: " Task deleted",
-        description: "The task has been successfully deleted.",
-      });
-      setTaskToDelete(null);
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Deletion failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const deleteTaskMutation = useDeleteTaskMutation(() => setTaskToDelete(null))
 
  
-  const deleteExercisesMutation = useMutation({
-    mutationFn: async () => {
-      await apiRequest("DELETE", `/api/exercises`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/exercises"] });
-    },
-    onError: (error: Error) => {
-     
-    },
-  });
+  const deleteExercisesMutation = useDeleteExercisesMutation();
   
   const totalPages = tasks ? Math.ceil(tasks.length / itemsPerPage) : 0;
   const paginatedTasks = tasks

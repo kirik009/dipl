@@ -14,7 +14,6 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
   role: text("role").notNull().default("user"),
-  level: text("level").notNull().default("beginner"),
   createdAt: timestamp("created_at").defaultNow(),
   accuracyRate: integer("accuracy_rate"),
   correctAnswers: integer("correct_answers"),
@@ -23,14 +22,11 @@ export const users = pgTable("users", {
 
 export const exercises = pgTable("exercises", {
   id: serial("id").primaryKey(),
-  type: text("type").notNull().default("sentence-builder"),
-  difficulty: text("difficulty").notNull().default("intermediate"),
   grammarTopic_id: integer("grammar_topic_id").references(() => grammarTopics.id),
   translation: text("translation").notNull(),
   correctSentence: text("correct_sentence").notNull(),
   words: text("words").array().notNull(),
   grammarExplanation: text("grammar_explanation"),
-  tags: text("tags").array(),
   task_id: integer("task_id").references(() => tasks.id),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: integer("created_by").references(() => users.id),
@@ -78,21 +74,17 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   fullName: true,
   role: true,
-  level: true,
   accuracyRate:true,
   exercisesNumber: true,
   correctAnswers: true,
 });
 
 export const insertExerciseSchema = createInsertSchema(exercises).pick({
-  type: true,
-  difficulty: true,
   translation: true,
   grammarTopic_id: true,
   correctSentence: true,
   words: true,
   grammarExplanation: true,
-  tags: true,
   createdBy: true,
   task_id: true,
 });
@@ -102,6 +94,7 @@ export const insertTaskSchema = createInsertSchema(tasks).pick({
   createdBy: true,
   triesNumber: true,
   timeConstraint: true,
+  exercisesNumber: true,
 });
 
 export const insertExerciseProgressSchema = createInsertSchema(exerciseProgress).pick({

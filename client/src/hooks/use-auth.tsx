@@ -38,13 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: Omit<User, 'password'>) => {
       queryClient.setQueryData(["/api/user"], user);
       toast({
-        title: "Login successful",
-        description: `Welcome back, ${user.fullName}!`,
+        title: "Вход выполнен",
+        description: `Добро пожаловать, ${user.fullName}!`,
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Login failed",
+        title: "Вход не выполнен",
         description: error.message,
         variant: "destructive",
       });
@@ -59,13 +59,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: (user: Omit<User, 'password'>) => {
       queryClient.setQueryData(["/api/user"], user);
       toast({
-        title: "Registration successful",
-        description: `Welcome, ${user.fullName}!`,
+        title: "Регистрация успешна",
+        description: `Добро пожаловать, ${user.fullName}!`,
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Registration failed",
+        title: "Регистрация не выполнена",
         description: error.message,
         variant: "destructive",
       });
@@ -79,12 +79,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
       toast({
-        title: "Logged out successfully",
+        title: "Выход успешен",
       });
     },
     onError: (error: Error) => {
       toast({
-        title: "Logout failed",
+        title: "Выход не выполнен",
         description: error.message,
         variant: "destructive",
       });

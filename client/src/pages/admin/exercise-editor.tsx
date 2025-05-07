@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/select";
 import { X, Plus, Loader2, ArrowLeft } from "lucide-react";
 import * as pdfjsLib from 'pdfjs-dist';
+import { useCreateExerciseMutation, useUpdateExerciseMutation } from "@/hooks/use-mutate";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -37,15 +38,14 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 ).toString();
 
 const formSchema = insertExerciseSchema.extend({
-  newWord: z.string().optional(),
-  currentTag: z.string().optional(),
+  newWord: z.string().optional()
  
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 export default function ExerciseEditor() {
-  const { id } = useParams<{ id: string }>();
+  const { task_id, id } = useParams<{ task_id: string, id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [wordInput, setWordInput] = useState("");
@@ -72,16 +72,12 @@ export default function ExerciseEditor() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      type: "sentence-builder",
-      difficulty: "intermediate",
       grammarTopic_id: 0,
       translation: "",
       correctSentence: "",
       words: [],
       grammarExplanation: "",
-      tags: [],
       newWord: "",
-      currentTag: "",
       task_id: null,
     }
   });
@@ -92,7 +88,6 @@ export default function ExerciseEditor() {
       form.reset({
         ...exercise,
         newWord: "",
-        currentTag: "",
       });
     }
   }, [exercise, form]);
@@ -102,50 +97,10 @@ export default function ExerciseEditor() {
     }, [form.formState.errors]);
 
   // Create exercise mutation
-  const createExerciseMutation = useMutation({
-    mutationFn: async (data: Omit<FormValues, "newWord" | "currentTag">) => {
-      const res = await apiRequest("POST", "/api/exercises", data);
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({queryKey: ["/api/exercises"]});
-      toast({
-        title: "Операция выполнена",
-        description: "Предложение успешно создано.",
-      });
-      window.history.back()
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Создание не выполнено",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const createExerciseMutation = useCreateExerciseMutation(task_id)
   
   // Update exercise mutation
-  const updateExerciseMutation = useMutation({
-    mutationFn: async (data: Omit<FormValues, "newWord" | "currentTag">) => {
-      const res = await apiRequest("PUT", `/api/exercises/${id}`, data);
-      return await res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({queryKey: ["/api/exercises"]});
-      toast({
-        title: "Операция выполнена",
-        description: "Предложение успешно обновлено",
-      });
-      window.history.back();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Обновление не выполнено",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const updateExerciseMutation = useUpdateExerciseMutation(id, task_id);
   
   // Handle adding a word
   const handleAddWord = () => {
@@ -162,25 +117,13 @@ export default function ExerciseEditor() {
     form.setValue("words", currentWords.filter(w => w !== word));
   };
   
-  // Handle adding a tag
-  const handleAddTag = () => {
-    if (!tagInput.trim()) return;
-    
-    const currentTags = form.getValues("tags") || [];
-    form.setValue("tags", [...currentTags, tagInput.trim()]);
-    setTagInput("");
-  };
-  
-  // Handle removing a tag
-  const handleRemoveTag = (tag: string) => {
-    const currentTags = form.getValues("tags") || [];
-    form.setValue("tags", currentTags.filter(t => t !== tag));
-  };
+
+
   
   // Handle form submission
   const onSubmit = (values: FormValues) => {
     // Remove the extra fields we added for UI purposes
-    const { newWord, currentTag, ...exerciseData } = values;
+    const { newWord, ...exerciseData } = values;
     
     if (isEditing) {
       updateExerciseMutation.mutate(exerciseData);
@@ -261,70 +204,26 @@ export default function ExerciseEditor() {
       <div className="bg-gray-100 px-6 py-4 flex items-center border-b border-gray-200">
         <Button variant="ghost" size="sm" onClick={() => navigate("/admin/exercises")} className="mr-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Exercises
+          Назад
         </Button>
         <h2 className="text-xl font-semibold">
-          {isEditing ? "Edit Exercise" : "Create New Exercise"}
+          {isEditing ? "Редактирование предложения" : "Создание предложения"}
         </h2>
       </div>
       
       <div className="p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Exercise Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select exercise type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="sentence-builder">Sentence Builder</SelectItem>
-                        <SelectItem value="gap-fill">Gap Fill</SelectItem>
-                        <SelectItem value="word-order">Word Order</SelectItem>
-                        <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="difficulty"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Difficulty Level</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select difficulty level" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="beginner">Beginner</SelectItem>
-                        <SelectItem value="intermediate">Intermediate</SelectItem>
-                        <SelectItem value="advanced">Advanced</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
+             
+            
               
               <FormField
   control={form.control}
   name="grammarTopic_id"
   render={({ field }) => (
     <FormItem>
-      <FormLabel>Grammar Topic</FormLabel>
+      <FormLabel>Тема</FormLabel>
       <Select
         onValueChange={(value) => field.onChange(Number(value))}
         defaultValue={field.value ? String(field.value) : undefined}
@@ -347,38 +246,6 @@ export default function ExerciseEditor() {
   )}
 />
               
-              <div>
-                <FormLabel>Tags</FormLabel>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {form.watch("tags")?.map((tag, index) => (
-                    <Badge key={index} variant="secondary" className="flex items-center gap-1">
-                      {tag}
-                      <button 
-                        type="button" 
-                        onClick={() => handleRemoveTag(tag)}
-                        className="text-gray-400 hover:text-gray-600 focus:outline-none"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </Badge>
-                  ))}
-                </div>
-                <div className="flex">
-                  <Input
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    placeholder="Add a tag..."
-                    className="rounded-r-none"
-                  />
-                  <Button 
-                    type="button" 
-                    onClick={handleAddTag}
-                    className="rounded-l-none"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
             </div>
             
 
@@ -391,14 +258,12 @@ export default function ExerciseEditor() {
               name="translation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Translation (Russian)</FormLabel>
+                  <FormLabel>Перевод на русский</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter the Russian translation" />
+                    <Input {...field} placeholder="Введите перевод предложения на русский язык" />
                   </FormControl>
-                  <FormDescription>
-                    The sentence in Russian that students need to translate.
-                  </FormDescription>
-                  <FormMessage />
+                 
+                  
                 </FormItem>
               )}
             />
@@ -412,14 +277,11 @@ export default function ExerciseEditor() {
               name="correctSentence"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Correct Sentence (English)</FormLabel>
+                  <FormLabel>Предложение на английском</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Enter the correct English sentence" />
+                    <Input {...field} placeholder="Введите предложение на английском языке" />
                   </FormControl>
-                  <FormDescription>
-                    The correct English translation that will be used to validate answers.
-                  </FormDescription>
-                  <FormMessage />
+                
                 </FormItem>
               )}
             />
@@ -446,7 +308,7 @@ export default function ExerciseEditor() {
                   <Input
                     value={wordInput}
                     onChange={(e) => setWordInput(e.target.value)}
-                    placeholder="Add a word..."
+                    placeholder="Добавьте слова..."
                     className="rounded-r-none"
                   />
                   <Button 
@@ -470,19 +332,15 @@ export default function ExerciseEditor() {
               name="grammarExplanation"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Grammar Explanation</FormLabel>
+                  <FormLabel>Пояснение</FormLabel>
                   <FormControl>
                     <Textarea 
                       {...field} 
-                      placeholder="Provide a grammar explanation that will be shown after the exercise is completed"
+                      placeholder="Дополните упражнение пояснением, которое будет предоставлено после предоставления ответаы"
                       rows={4}
                       value= {field.value ?? ""} 
                     />
                   </FormControl>
-                  <FormDescription>
-                    This explanation will help students understand the grammar rules used in the sentence.
-                  </FormDescription>
-                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -494,17 +352,17 @@ export default function ExerciseEditor() {
                 onClick={() => navigate("/admin/exercises")}
                 className="mr-2"
               >
-                Cancel
+                Отменить
               </Button>
               <Button
                 type="submit"
                 disabled={createExerciseMutation.isPending || updateExerciseMutation.isPending}
               >
                 {createExerciseMutation.isPending || updateExerciseMutation.isPending
-                  ? "Saving..."
+                  ? "Сохранение..."
                   : isEditing
-                  ? "Update Exercise"
-                  : "Create Exercise"}
+                  ? "Обновить предложение"
+                  : "Создать предложение"}
               </Button>
             </div>
           </form>

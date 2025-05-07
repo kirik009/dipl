@@ -5,12 +5,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Exercise, insertExerciseSchema, insertTaskSchema, Task } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
@@ -20,13 +17,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { X, Plus, Loader2, ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import {
@@ -39,16 +29,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
+import { useCreateTaskMutation, useDeleteExerciseMutation, useUpdateExercisesMutation, useUpdateTaskMutation } from "@/hooks/use-mutate";
 type FormValues = z.infer<typeof insertTaskSchema>;
 
 export default function TaskEditor() {
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-  const { toast } = useToast();
-  const [wordInput, setWordInput] = useState("");
-  const [tagInput, setTagInput] = useState("");
-  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const [exerciseToDelete, setExerciseToDelete] = useState<Exercise | null>(null);
   const isEditing = !!id && id !== "new";
   const {user} = useAuth();
@@ -81,6 +67,7 @@ export default function TaskEditor() {
       triesNumber:0,
       timeConstraint: "00:00:00",
       createdBy: user?.id,
+      exercisesNumber: exercises?.length,
     }
   });
 
@@ -93,109 +80,16 @@ export default function TaskEditor() {
     }
   }, [task, form]);
   
-  // Create exercise mutation
-  const createTaskMutation = useMutation({
-    mutationFn: async (data: FormValues) => {
-      const res = await apiRequest("POST", "/api/tasks", data);
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Task created",
-        description: "The task has been successfully created.",
-      });
-       queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });  
-      navigate("/tasks");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Creation failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
-    // Update exercises task_id mutation
-    const updateExercisesMutation =  useMutation({
-      mutationFn: async () => {
-        if (isEditing) {
-          const res = await apiRequest("PUT", `/api/task_exercises/assign/${newTask?.id}`);
-        return await res.json();
-      }
-        else {
-          const res = await apiRequest("PUT", `/api/task_exercises/assign/${id}`);
-        return await res.json();
-      }
-        
-      },
-      onSuccess: () => {
-        toast({
-          title: "Exercise updated",
-          description: "The exercise has been successfully upd.",
-        });
-        queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-        navigate("/admin/tasks");
-      },
-      onError: (error: Error) => {
-        toast({
-          title: "Update failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      },
-    });
+    const updateExercisesMutation = useUpdateExercisesMutation(newTask, id, isEditing)
 
-  // Update task mutation
-  const updateTaskMutation =  useMutation({
-    mutationFn: async (data: FormValues) => {
-      const res = await apiRequest("PUT", `/api/tasks/${id}`, data);
-      return await res.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Exercise updated",
-        description: "The exercise has been successfully upda.",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-      navigate("/admin/tasks");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Update failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-   
-
-    const deleteExerciseMutation = useMutation({
-      mutationFn: async (exerciseId: number) => {
-        await apiRequest("DELETE", `/api/exercises/${exerciseId}`);
-      },
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: [isEditing ? `/api/task_exercises/${id}` : `/api/new_task_exercises`],
-        });
-        toast({
-          title: "Exercise deleted",
-          description: "The exercise has been successfully deleted.",
-        });
-        setExerciseToDelete(null);
-      },
-      onError: (error: Error) => {
-        toast({
-          title: "Deletion failed",
-          description: error.message,
-          variant: "destructive",
-        });
-      },
-    });
+  const updateTaskMutation =  useUpdateTaskMutation(id);
+  const createTaskMutation = useCreateTaskMutation();
+    
+  const deleteExerciseMutation = useDeleteExerciseMutation(id, isEditing,  () => setExerciseToDelete(null))
   
   
     const handleEditExercise = (exerciseId: number) => {
-      navigate(`/admin/exercises/${exerciseId}/edit`);
+      navigate(`/admin/tasks/${id}/exercises/${exerciseId}/edit`);
     };
 
       const handleDeleteExercise = (exercise: Exercise) => {
@@ -207,12 +101,14 @@ export default function TaskEditor() {
           deleteExerciseMutation.mutate(exerciseToDelete.id);
         }
       };
-    
   // Handle form submission
   const onSubmit = (values: FormValues) => {
     // Remove the extra fields we added for UI purposes
-    const {...taskData } = values;
-   
+    const taskData = {
+      ...values,
+      exercisesNumber: exercises?.length, // добавляем актуальное значение
+    };
+    
     if (isEditing) {
       updateTaskMutation.mutate(taskData);
     } else {
@@ -354,18 +250,17 @@ export default function TaskEditor() {
         <table className="min-w-full bg-white">
           <thead className="bg-gray-100">
             <tr>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">№</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Перевод</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Предложение</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Темы</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Сложность</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {exercises.map((exercise) => (
+            {exercises.map((exercise, index) => (
               <tr key={exercise.id}>
-                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">{exercise.id}</td>
+                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">{index + 1}</td>
                 <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
                   {exercise.translation}
                 </td>
@@ -373,19 +268,6 @@ export default function TaskEditor() {
                   {exercise.correctSentence}
                 </td>
                 <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">{exercise.topicName}</td>
-                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      exercise.difficulty === "beginner"
-                        ? "bg-green-100 text-green-800"
-                        : exercise.difficulty === "intermediate"
-                        ? "bg-blue-100 text-blue-800"
-                        : "bg-purple-100 text-purple-800"
-                    }`}
-                  >
-                    {exercise.difficulty}
-                  </span>
-                </td>
                 <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">
                   <Button
                     variant="ghost"
@@ -413,7 +295,7 @@ export default function TaskEditor() {
 }
   <Button
     type="button"
-     onClick={() => navigate(`/admin/exercises/new`)}
+     onClick={() => navigate(`/admin/tasks/${id}/exercises/new`)}
     >
       Добавить пример
   </Button>

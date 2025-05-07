@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useLocation, Link } from "wouter";
 import { Navbar } from "@/components/layout/navbar";
 import UserManagement from "./user-management";
-import ExerciseManagement from "./exercise-management";
 import ExerciseEditor from "./exercise-editor";
 import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
@@ -48,7 +47,7 @@ else {
     <>
       {/* Admin Tabs */}
       <div className="bg-gray-100 px-6 flex border-b border-gray-200">
-      {user?.role === "admin" &&
+      {
         <Link href="/admin/users">
           <a className={`py-4 px-4 font-medium ${activeTab === 'users' ? 'text-primary border-b-2 border-primary' : 'text-gray-600'}`}
              onClick={() => setActiveTab('users')}>

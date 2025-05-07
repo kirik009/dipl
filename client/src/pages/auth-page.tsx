@@ -62,7 +62,6 @@ export default function AuthPage() {
     registerMutation.mutate({
       ...userData,
       role: "user",
-      level: "beginner",
       confirmPassword,
     });
   };
@@ -155,7 +154,7 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>Полное имя</FormLabel>
                             <FormControl>
-                              <Input placeholder="John Doe" {...field} />
+                              <Input placeholder="Введите ваше полное имя" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -169,7 +168,7 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>Никнейм</FormLabel>
                             <FormControl>
-                              <Input placeholder="Choose a username" {...field} />
+                              <Input placeholder="Введите ваш никнейм" {...field} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

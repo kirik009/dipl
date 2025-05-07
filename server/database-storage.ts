@@ -118,22 +118,16 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getExercises(difficulty?: string, grammarTopic_id?: number): Promise<Exercise[]> {
+  async getExercises(grammarTopic_id?: number): Promise<Exercise[]> {
     try {
       let query = db.select().from(exercises);
       
-      if (difficulty && grammarTopic_id) {
+      if (grammarTopic_id) {
         return await db.select().from(exercises).where(
-          and(
-            eq(exercises.difficulty, difficulty),
             eq(exercises.grammarTopic_id, grammarTopic_id)
-          )
+          
         ).orderBy(exercises.id);
-      } else if (difficulty) {
-        return await db.select().from(exercises).where(eq(exercises.difficulty, difficulty));
-      } else if (grammarTopic_id) {
-        return await db.select().from(exercises).where(eq(exercises.grammarTopic_id, grammarTopic_id));
-      }
+      } 
       
       return await db.select().from(exercises);
     } catch (error) {
@@ -251,14 +245,11 @@ export class DatabaseStorage implements IStorage {
         const query = db
           .select({
             id: exercises.id,
-            type: exercises.type,
-            difficulty: exercises.difficulty,
             grammarTopic_id: exercises.grammarTopic_id,
             translation: exercises.translation,
             correctSentence: exercises.correctSentence,
             words: exercises.words,                   
             grammarExplanation: exercises.grammarExplanation,
-            tags: exercises.tags,
             task_id: exercises.task_id,
             createdAt: exercises.createdAt,
             createdBy: exercises.createdBy,

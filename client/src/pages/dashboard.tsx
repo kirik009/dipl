@@ -13,9 +13,9 @@ const Dashboard: FC = () => {
   const { user } = useAuth();
   
   const { data: exercises, isLoading: isLoadingExercises } = useQuery<Exercise[]>({
-    queryKey: ['/api/exercises', user?.level],
+    queryKey: ['/api/exercises'],
     queryFn: async () => {
-      const res = await fetch(`/api/exercises?difficulty=${user?.level}`);
+      const res = await fetch(`/api/exercises`);
       if (!res.ok) throw new Error('Failed to fetch exercises');
       return res.json();
     },
@@ -91,13 +91,7 @@ const Dashboard: FC = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-medium">Настоящий уровень</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="flex items-baseline">
-                  <span className="text-3xl font-bold text-primary mr-2 capitalize">
-                    {user?.level || 'Beginner'}
-                  </span>
-                </div>
-              </CardContent>
+             
             </Card>
           </div>
           
@@ -134,12 +128,7 @@ const Dashboard: FC = () => {
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="pb-3">
-                      <div className="flex items-center space-x-2 text-sm">
-                        {/* <Badge variant="secondary">{exercise.grammarTopic}</Badge> */}
-                        <Badge variant="outline" className="capitalize">{exercise.difficulty}</Badge>
-                      </div>
-                    </CardContent>
+                  
                     <CardFooter>
                       <Link href={`/exercise/${exercise.id}`}>
                         <Button className="w-full">
