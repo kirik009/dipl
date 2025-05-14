@@ -32,11 +32,17 @@ export default function TasksPage() {
   });
 
     const { data: assignedTasks, isLoading: assignedLoading, error: assignedError } = useQuery<(AssingedTask& { taskName: string | null }  & {authorName: string | null })[]>({
-    queryKey: [`/api/assignedUserTasks/${user?.id}`],
+    queryKey: [`/api/assignedTasks/${user?.id}`],
   });
  
    const { data: taskProg, isLoading: progLoading, error: progError } = useQuery<TaskProgress>({
     queryKey: [`/api/last_task_prog/${user?.id}`],
+    queryFn: async () => {
+        const response = await fetch(`/api/last_task_prog/${user?.id}`);
+        if (!response.ok) throw new Error("Failed to fetch task progress");
+        return response.json();
+      },
+      staleTime: 0,
   });
 
 
@@ -48,12 +54,14 @@ export default function TasksPage() {
   if (exerciseProgs) {
   
   for (let i = 0; i < exerciseProgs?.length; i++) {
+    
     if (exerciseProgs[i].isCorrect !== null) {
-      nextSeq+= 1;
+      nextSeq+= 1;  
+      
     }
   }
 }
-  console.log(exerciseProgs, nextSeq);
+
      const { data: nextExercise, isLoading: nextExerciseLoading, error: nextExerciseError } = useQuery<Exercise>({
     queryKey: [`/api/task_exercises/${taskProg?.taskId}/seq/${nextSeq}`],
     queryFn: async () => {
@@ -87,8 +95,8 @@ const paginatedTasks = currentTasks.slice(
   currentPage * itemsPerPage
 );
 
-if (taskProg?.isActive&& nextExercise) {
-  navigate(`/tasks/${taskProg.taskId}/prog/${taskProg.id}/exercises/${nextExercise.id + 1}/seq/${nextSeq}`);
+if (taskProg?.isActive && nextExercise) {
+  navigate(`/tasks/${taskProg.taskId}/prog/${taskProg.id}/exercises/${nextExercise.id}/seq/${nextSeq}`);
   return null;
 }
   if (isLoading || exerciseProgsLoading || assignedLoading||  progLoading || nextExerciseLoading) {
@@ -166,11 +174,24 @@ if (taskProg?.isActive&& nextExercise) {
   {paginatedTasks.map((task) => (
     <tr key={task.id}>
       <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
-        <a href={`/tasks/${task.id}`}>
+
+{activeTab === "all"
+?
+          <a href={`/tasks/${task.id}`}>
+          
+   {(task as Task & { creatorFullName: string | null }).name}
+  </a>
+  : <a href={`/tasks/${(task as AssingedTask).taskId}`}>
+    {(task as AssingedTask & { taskName: string | null }& { authorName: string | null }).taskName}
+      </a>
+  }
+        
+        {/* <a href={`/tasks/${task.id}`}>
           {activeTab === "all"
   ? (task as Task & { creatorFullName: string | null }).name
-  : (task as AssingedTask & { taskName: string | null }& { authorName: string | null }).taskName}
-        </a>
+  : (task as AssingedTask & { taskName: string | null }& { authorName: string | null }).taskName
+  }
+        </a> */}
       </td>
       <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
         {activeTab === "all"

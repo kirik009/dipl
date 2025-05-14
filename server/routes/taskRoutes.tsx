@@ -83,6 +83,22 @@
       }
     });
 
+        app.get("/api/task_prog/:taskId/:userId", async (req, res, next) => {
+      try {
+        const taskId = parseInt(req.params.taskId);
+        const userId = parseInt(req.params.userId);
+        const taskProgress = await storage.getUserTaskProgress(userId, taskId);
+        
+        if (!taskProgress) {
+          return res.status(404).json({ message: "Task progress not found" });
+        }
+        
+        res.json(taskProgress);
+      } catch (error) {
+        next(error);
+      }
+    });
+
      app.get("/api/last_task_prog/:id", async (req, res, next) => {
       try {
         const id = parseInt(req.params.id);

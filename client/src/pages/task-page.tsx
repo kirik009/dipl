@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Exercise, Task, TaskProgress } from "@shared/schema";
+import { AssingedTask, Exercise, Task, TaskProgress } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { toast, useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,6 @@ import { Navbar } from "@/components/layout/navbar";
 
 
 import { Loader2, Pencil, Trash2, Search, FilePlus } from "lucide-react";
-import { query } from "express";
 export default function TaskPage() {
   const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
@@ -27,16 +26,13 @@ export default function TaskPage() {
       },
   });
 
-  const { data: exercise } = useQuery<Exercise>({
-    queryKey: [`/api/task_exercises/${id}/seq/${0}`],
-    queryFn: async () => {
-        const response = await fetch(`/api/task_exercises/${id}/seq/${0}`);
-        if (!response.ok) throw new Error("Failed to fetch exercises");
-        return response.json();
-      },
+  const { data: exercises, isLoading: exercisesLoading, error: exercisesError } = useQuery<Exercise[]>({
+    queryKey: [`/api/task_exercises/${id}`],
   });
-
-
+""
+  const { data: taskProgs, isLoading: taskProgsLoading, error: taskProgsError } = useQuery<TaskProgress[]>({
+    queryKey: [`/api/task_prog/${task?.id}/${user?.id}`],
+  });
   const submitMutation = useMutation({
     mutationFn: async () => {   
       const res = await apiRequest("POST", `/api/tasks/prog`, {
@@ -49,11 +45,11 @@ export default function TaskPage() {
     },
      onSuccess: (data) => {
       const newProgressId = data.id;
-      if (exercise) {
-        const exerciseId = exercise.id;
+      if (exercises) {
+        const exerciseId = exercises[0].id;
          if (task?.exercisesNumber){
       for (let i = 0; i < task?.exercisesNumber; i++)  {
-        submitProgressMutation.mutate(newProgressId);}
+        submitProgressMutation.mutate({newProgressId, i});}
 
     }
     
@@ -75,15 +71,16 @@ export default function TaskPage() {
   });
 
   const submitProgressMutation = useMutation({
-    mutationFn: async (newProgressId: number) => {
+    mutationFn: async ({newProgressId, i}: {newProgressId: number, i: number}) => {
      
       const res = await apiRequest("POST", "/api/exercises/submit", {
-        
+        exerciseId: exercises ? exercises[i].id : 0,
         userId: user?.id,
         taskProgressId: newProgressId,
-      });
+     });
       return await res.json();
-    },
+    
+  },
     onSuccess: (newProgressId: number) => {
       queryClient.invalidateQueries({ queryKey: [`/api/task_exercises_prog/${newProgressId}`]});
     },
@@ -96,6 +93,13 @@ export default function TaskPage() {
     },
   });
   const handleSubmit = () => {
+    if ( Number(task?.triesNumber) != 0 &&  task && taskProgs && taskProgs?.length > Number(task?.triesNumber)) {
+      toast({
+        title: "Вы не можете пройти это задание",
+        variant: "destructive",
+      });
+       return;
+    }
     submitMutation.mutate();
    
     
@@ -104,11 +108,13 @@ export default function TaskPage() {
     const date = task ? new Date(task?.createdAt): new Date()
     const date2 = task ? new Date(date.getTime() - durationMs): new Date()
     const timeLeft = task ? (date.getTime() -  date2.getTime() ) : 0;
-    localStorage.setItem("timeLeft", timeLeft.toString());    
+    if (task?.timeConstraint !== "00:00:00")
+    localStorage.setItem("timeLeft", timeLeft.toString()); 
+    else localStorage.removeItem("timeLeft");
   };
 
 
-  if (isLoading) {
+  if (isLoading || exercisesLoading|| taskProgsLoading) {
     return (
         <>
                 <Navbar />

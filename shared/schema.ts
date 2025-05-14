@@ -14,10 +14,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
   role: text("role").notNull().default("user"),
-  createdAt: timestamp("created_at").defaultNow(),
-  accuracyRate: integer("accuracy_rate"),
-  correctAnswers: integer("correct_answers"),
-  exercisesNumber: integer("exercises_number"),
+  
 });
 
 export const exercises = pgTable("exercises", {
@@ -85,9 +82,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   fullName: true,
   role: true,
-  accuracyRate:true,
-  exercisesNumber: true,
-  correctAnswers: true,
 });
 
 export const insertExerciseSchema = createInsertSchema(exercises).pick({

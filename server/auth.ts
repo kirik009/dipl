@@ -3,7 +3,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
 import { storage } from "./storage";
-import { User as SelectUser, loginUserSchema, registerUserSchema } from "@shared/schema";
+import { User as SelectUser, insertUserSchema, loginUserSchema, registerUserSchema } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import { z } from "zod";
 import * as crypto from "crypto";
@@ -92,6 +92,7 @@ export function setupAuth(app: Express) {
         role: validatedData.role || "user",
       });
 
+      
       // Remove password from response
       const { password, ...userWithoutPassword } = user;
 
@@ -150,5 +151,37 @@ export function setupAuth(app: Express) {
     // Remove password from response
     const { password, ...userWithoutPassword } = req.user;
     res.json(userWithoutPassword);
+  });
+
+    app.post("/api/createUser", async (req, res, next) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      
+      const existingUser = await storage.getUserByUsername(validatedData.username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      const user = await storage.createUser({
+        username: validatedData.username,
+        password: hashPassword(validatedData.password),
+        fullName: validatedData.fullName,
+        role: validatedData.role || "user",
+      });
+
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+
+      res.status(201).json(userWithoutPassword);
+    } catch (error: unknown) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      next(error);
+    }
   });
 }

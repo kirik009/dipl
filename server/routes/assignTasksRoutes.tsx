@@ -69,6 +69,63 @@ export async function assignTasksRoutes(app: Express) {
     }
   });
 
+
+   app.patch("/api/assignedTasks/:taskId", async (req, res, next) => {
+    try {
+      
+      const taskId = parseInt(req.params.taskId);
+  
+      const updatedExercise = await storage.solveAssignedTask(taskId);
+      
+      if (!updatedExercise) {
+        return res.status(404).json({ message: "Assigned task not found" });
+      }
+      
+      res.json(updatedExercise);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      next(error);
+    }
+  });
+
+
+  app.put("/api/assignedTasks/:id", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated() || !['admin', 'teacher'].includes(req.user.role)) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const exerciseId = parseInt(req.params.id);
+      const { dueDate, ...rest} = req.body;
+                  const validatedData = insertAssignedTaskSchema.parse({
+          ...rest,
+          dueDate: dueDate ? new Date(dueDate) : null,
+        });
+                  
+      
+      const updatedExercise = await storage.updateAssignedTask(exerciseId, validatedData);
+      
+      if (!updatedExercise) {
+        return res.status(404).json({ message: "Exercise not found" });
+      }
+      
+      res.json(updatedExercise);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      next(error);
+    }
+  });
+
           app.delete("/api/assignedTasks/:id", async (req, res, next) => {
               try {
                 if (!req.isAuthenticated() || !['admin', 'teacher'].includes(req.user.role)) {

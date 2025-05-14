@@ -21,9 +21,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
 const profileUpdateSchema = z.object({
-  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  username: z.string().min(1, "Никнейм должен содержать не менее одной буквы"),
+  fullName: z.string().min(2, "Полное имя должно содержать не менее двух букв"),
   currentPassword: z.string().optional(),
-  newPassword: z.string().min(6, "New password must be at least 6 characters").optional(),
+  newPassword: z.string().min(6, "Новый пароль должен содержать не менее 6 букв").optional(),
   confirmNewPassword: z.string().optional(),
 }).refine((data) => {
   if (data.newPassword && !data.currentPassword) {
@@ -49,23 +50,12 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  type ProgressStats = {
-    accuracy: number;
-    totalExercises: number;
-    correctExercises: number;
-  };
-  // Fetch user progress statistics
-const { data: progressStats, isLoading: isLoadingProgress } = useQuery<ProgressStats>({
-  queryKey: ["/api/user/progress"],
-  queryFn: async () => {
-    const res = await apiRequest("GET", "/api/user/progress");
-    return res.json();
-  },
-});
+ 
   
   const form = useForm<ProfileUpdateFormData>({
     resolver: zodResolver(profileUpdateSchema),
     defaultValues: {
+      username: user?.username || "",
       fullName: user?.fullName || "",
       currentPassword: "",
       newPassword: "",
@@ -135,38 +125,6 @@ const { data: progressStats, isLoading: isLoadingProgress } = useQuery<ProgressS
               </div>
               
               <div className="p-6">
-                {isLoadingProgress ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : progressStats ? (
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-gray-50 p-4 rounded-lg text-center">
-                      <p className="text-4xl font-bold text-primary mb-1">
-                        {progressStats.accuracy ? progressStats.accuracy.toFixed(0) : 0}%
-                      </p>
-                      <p className="text-gray-600">Точность</p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg text-center">
-                      <p className="text-4xl font-bold text-primary mb-1">
-                        {progressStats.totalExercises || 0}
-                      </p>
-                      <p className="text-gray-600">Упражнений пройдено</p>
-                    </div>
-                    <div className="bg-gray-50 p-4 rounded-lg text-center">
-                      <p className="text-4xl font-bold text-primary mb-1">
-                        {progressStats.correctExercises || 0}
-                      </p>
-                      <p className="text-gray-600">Правильные ответы</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mb-8 p-4 bg-gray-50 rounded-lg text-center">
-                    <p className="text-gray-600">
-                      Complete exercises to see your progress statistics.
-                    </p>
-                  </div>
-                )}
                 
                 <div className="mb-8">
                   <h3 className="font-heading text-xl font-semibold mb-4">Настройки профиля</h3>
@@ -181,7 +139,7 @@ const { data: progressStats, isLoading: isLoadingProgress } = useQuery<ProgressS
                             <FormItem>
                               <FormLabel>Полное имя</FormLabel>
                               <FormControl>
-                                <Input placeholder="Your full name" {...field} />
+                                <Input placeholder="Ваше полное имя" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -190,7 +148,23 @@ const { data: progressStats, isLoading: isLoadingProgress } = useQuery<ProgressS
                         
                        
                       </div>
-                      
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="username"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Никнейм</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Ваше никнейм" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                       
+                      </div>
                       <div>
                         <h4 className="font-medium text-gray-700 mb-4">Сменить пароль</h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -2,13 +2,14 @@ import { IStorage } from "./storage";
 import connectPg from "connect-pg-simple";
 import session from "express-session";
 import { pool } from "./db";
-import * as assignedExercisesOps from "./database-storage/assignTasks";
+import * as assignedTasksOps from "./database-storage/assignTasks";
 import * as usersOps from "./database-storage/users";
 import * as exercisesOps from "./database-storage/exercises";
 import * as exerciseProgressOps from "./database-storage/exerciseProgress";
 import * as taskProgressOps from "./database-storage/taskProgress";
 import * as tasksOps from "./database-storage/tasks";
 import * as grammarTopicsOps from "./database-storage/grammar-topics";
+import { AssingedTask, TaskProgress } from "@shared/schema";
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
 
@@ -20,17 +21,17 @@ export class DatabaseStorage implements IStorage {
     });
   }
   
- 
-  getAssignedTasks = assignedExercisesOps.getAssignedTasks;
-  getAssignedExpiredTasks = assignedExercisesOps.getAssignedExpiredTasks;
-  getAssignedSolvedTasks = assignedExercisesOps.getAssignedSolvedTasks;
-  updateAssignedTask = assignedExercisesOps.updateAssignedTask;
-  createAssignedTask = assignedExercisesOps.createAssignedTask;
-  deleteAssignedTask= assignedExercisesOps.deleteAssignedTask;
-
+ getUserTaskProgress = taskProgressOps.getUserTaskProgress;
+  getAssignedTasks = assignedTasksOps.getAssignedTasks;
+  getAssignedExpiredTasks = assignedTasksOps.getAssignedExpiredTasks;
+  getAssignedSolvedTasks = assignedTasksOps.getAssignedSolvedTasks;
+  updateAssignedTask = assignedTasksOps.updateAssignedTask;
+  createAssignedTask = assignedTasksOps.createAssignedTask;
+  deleteAssignedTask= assignedTasksOps.deleteAssignedTask;
+  solveAssignedTask = assignedTasksOps.solvAssignedTask
   
   getUser = usersOps.getUser;
-
+  deleteUser = usersOps.deleteUser;
  getUserByUsername = usersOps.getUserByUsername;
  createUser = usersOps.createUser;
   updateUser = usersOps.updateUser;
@@ -65,14 +66,13 @@ updateExerciseProgress = exerciseProgressOps.updateExerciseProgress;
 getLastTaskProgress = taskProgressOps.getLastTaskProgress;
  getExerciseProgress = exerciseProgressOps.getExerciseProgress;
 getLastExerciseProgress = exerciseProgressOps.getLastExerciseProgress;
-getExerciseProgressSummary = exerciseProgressOps.getExerciseProgressSummary;
+
 
  createExerciseProgress = exerciseProgressOps.createExerciseProgress;
   
   
 
 getTaskProgress = taskProgressOps.getTaskProgress;
-getTaskProgressSummary = taskProgressOps.getTaskProgressSummary; 
 
   createTaskProgress = taskProgressOps.createTaskProgress;
 

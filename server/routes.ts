@@ -17,20 +17,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   exerciseRoutes(app);
   grammarRoutes(app);
   assignTasksRoutes(app);
-  app.get("/api/user/progress", async (req, res, next) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-      
-      const progress = await storage.getExerciseProgressSummary(req.user.id);
-      res.json(progress);
-    } catch (error) {
-      next(error);
-    }
-  });
-
-
 
   // Admin user management routes
   app.get("/api/admin/users", async (req, res, next) => {
@@ -84,6 +70,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { password: _, ...userWithoutPassword } = updatedUser;
   
       res.json(userWithoutPassword);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+
+  app.delete("/api/admin/users/:id", async (req, res, next) => {
+    try {
+      // Проверка авторизации и роли
+      if (!req.isAuthenticated() || req.user.role !== "admin") {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+  
+      const userId = Number(req.params.id);
+      
+      await storage.deleteUser(userId);
+      
+      res.sendStatus(204);
     } catch (error) {
       next(error);
     }

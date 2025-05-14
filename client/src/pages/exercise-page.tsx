@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { useMutation } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Navbar } from "@/components/layout/navbar";
 import { DragItem } from "@/components/ui/dnd/drag-item";
 import { DropZone } from "@/components/ui/dnd/drop-zone";
@@ -44,10 +44,10 @@ export default function ExercisePage() {
   const [wordBank, setWordBank] = useState<WordItem[]>([]);
   const [sentence, setSentence] = useState<WordItem[]>([]);
 
-  const [timeLeft, setTimeLeft] = useState(() => {
-    const stored = localStorage.getItem("timeLeft");
-    return stored ? parseInt(stored, 10) : 0;
-  });
+  const [timeLeft, setTimeLeft] = useState<number | null>(() => {
+  const stored = localStorage.getItem("timeLeft");
+  return stored ? parseInt(stored, 10) : null;
+});
 
    type FormValues = z.infer<typeof insertTaskProgressSchema>;
   
@@ -57,15 +57,31 @@ export default function ExercisePage() {
       return await res.json();
     },
     onSuccess: () => {
-      
+      queryClient.invalidateQueries({queryKey: [`/api/task_exercises_prog/${progressId}`]})
       
     },
-   
   });
+      const updateAssignedTaskStatusMutation =  useMutation({
+      mutationFn: async () => {
+        const res = await apiRequest("PATCH", `/api/assignedTasks/${taskId}`);
+        return await res.json();
+      },
+      onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: [`/api/assignedTasks/${user?.id}`]});
+          },
+      onError: (error: Error) => {
+        toast({
+          title: "Обновление не выполнено",
+          description: error.message,
+          variant: "destructive",
+        });
+      },
+    });
 
 useEffect(() => {
-
+if (timeLeft === null) return;
       if (timeLeft <= 0) {
+        updateAssignedTaskStatusMutation.mutate();
         updateTaskMutation.mutate( 
           {isActive: false}
        )
@@ -73,17 +89,12 @@ useEffect(() => {
       }
     
       const timer = setTimeout(() => {
-        setTimeLeft(prev => prev - 1000);
+        setTimeLeft(prev => (prev !== null ? prev - 1000 : null));
       }, 1000);
     
       return () => clearTimeout(timer);
     }, [timeLeft]);
     
-  
-
-
-  // Fetch exercise data
-
 
    
   useEffect(() => {
@@ -106,7 +117,7 @@ useEffect(() => {
      if (exerciseProgs) {
      
       const res = await apiRequest("PATCH", `/api/exerciseProg/${exerciseProgs[Number(seq)]?.id}`, {
-        exerciseId: parseInt(exerciseId),
+        // exerciseId: parseInt(exerciseId),
         isCorrect: userAnswer === correctAnswer,
         userAnswer,
         completedAt: new Date(),
@@ -171,7 +182,11 @@ useEffect(() => {
     }
     
     submitMutation.mutate();
+    if (timeLeft !== null) {
+      
+    
     localStorage.setItem("timeLeft", timeLeft.toString());
+    }
   };
   
   // Skip exercise
@@ -180,7 +195,7 @@ useEffect(() => {
     navigate(`/tasks/${taskId}/results/${exerciseId}?skipped=true`);
   };
   
-  if (isLoading &&  exerciseProgsLoading && taskProgLoading) {
+  if (isLoading ||  exerciseProgsLoading || taskProgLoading) {
     return (
       <>
         <Navbar />
@@ -191,7 +206,7 @@ useEffect(() => {
     );
   }
   
-  if (error || !exercise) {
+  if (error || exerciseProgsError || taskProgError) {
     return (
       <>
         <Navbar />
@@ -213,16 +228,21 @@ useEffect(() => {
       
       <Navbar />
       <main className="container mx-auto pt-20 pb-12 px-4">
-      <p className="text-lg text-gray-600 mb-8">{
-(() =>  {
-  const totalSeconds = Math.floor(timeLeft / 1000); 
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${String(hours).length === 1 ? `0${hours}` : hours}:${String(minutes).length === 1 ? `0${minutes}` : minutes}:${String(seconds).length === 1 ? `0${seconds}` : seconds}`
-})()
-}
-</p>
+    {timeLeft !== null && (
+  <p className="text-lg text-gray-600 mb-8">
+    {
+      (() => {
+        const totalSeconds = Math.floor(timeLeft / 1000);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        return `${hours.toString().padStart(2, "0")}:${minutes
+          .toString()
+          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+      })()
+    }
+  </p>
+)}
         <div className="py-16">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
@@ -250,7 +270,7 @@ useEffect(() => {
                 
                 <div className="mb-8">
                   <div className="p-4 bg-gray-50 rounded-lg mb-4">
-                    <p className="text-gray-700 font-medium">{exercise.translation}</p>
+                    <p className="text-gray-700 font-medium">{exercise?.translation}</p>
                   </div>
                   
                   <DropZone 
@@ -313,14 +333,6 @@ useEffect(() => {
                     Перезагрузить
                   </Button>
                   <div>
-                    <Button
-                      variant="outline"
-                      onClick={handleSkip}
-                      className="mr-2 gap-1"
-                    >
-                      <SkipForward className="h-4 w-4" />
-                      Пропустить
-                    </Button>
                     <Button
                       onClick={handleCheckAnswer}
                       disabled={submitMutation.isPending}

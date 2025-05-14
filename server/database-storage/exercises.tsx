@@ -123,7 +123,8 @@ import { db } from "server/db";
                           eq(exercises.task_id, task_id),
                           isNull(exercises.task_id)
                         )
-                      );
+                      )
+                      .orderBy(exercises.id);
                      
                     const exers = await query;
                       return exers;

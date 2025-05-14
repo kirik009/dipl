@@ -41,13 +41,10 @@ export default function TaskResults() {
         return response.json();
       },
     });
-
-
-
-
+    
   const isLoading =
-  progLoading &&
-  taskLoading &&
+  progLoading ||
+  taskLoading ||
   exerciseProgsLoading;
   if (!prog || !task   ) {
     return null; // или loader

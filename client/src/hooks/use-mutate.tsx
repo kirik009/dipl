@@ -302,7 +302,7 @@ export function useCreateTaskMutation() {
             },
             onError: (error: Error) => {
               toast({
-                title: "Deletion failed",
+                title: "Удаление не выполнено",
                 description: error.message,
                 variant: "destructive",
               });
@@ -379,6 +379,28 @@ export function useCreateTaskMutation() {
               await apiRequest("DELETE", `/api/assignedTasks/${id}`);
             },
          
+            onError: (error: Error) => {
+              toast({
+                title: "Операция не выполнена",
+                description: error.message,
+                variant: "destructive",
+              });
+            },
+          });
+        }
+
+
+           export function useCreateUserMutation() { 
+            const {toast} = useToast();
+            return useMutation({
+            mutationFn: async (userData: InsertUser) => {
+              console.log(userData)
+              const res = await apiRequest("POST", "/api/createUser", userData);
+              return await res.json();
+            },
+            onSuccess: (user: Omit<User, 'password'>) => {
+              
+            },
             onError: (error: Error) => {
               toast({
                 title: "Операция не выполнена",

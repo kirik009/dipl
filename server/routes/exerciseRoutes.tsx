@@ -226,6 +226,7 @@ export async function exerciseRoutes(app: Express) {
       }
       const validatedData = insertExerciseProgressSchema.parse(req.body);
       const exerciseProgress = await storage.createExerciseProgress({
+        exerciseId: validatedData.exerciseId,
         userId: req.user.id,
         taskProgressId: validatedData.taskProgressId,
       });

@@ -1,6 +1,6 @@
   import { useEffect, useState } from "react";
-  import { useQuery, useMutation } from "@tanstack/react-query";
-  import { AssingedTask, Exercise, Task, User } from "@shared/schema";
+  import { useQuery, useMutation, useQueries } from "@tanstack/react-query";
+  import { AssingedTask, Exercise, ExerciseProgress, InsertUser, registerUserSchema, Task, TaskProgress, User } from "@shared/schema";
   import { apiRequest, queryClient } from "@/lib/queryClient";
   import { useToast } from "@/hooks/use-toast";
   import { Button } from "@/components/ui/button";
@@ -26,31 +26,37 @@
     AlertDialogTitle,
     AlertDialogTrigger,
   } from "@/components/ui/alert-dialog";
-  import { Loader2, Pencil, Trash2, Search, UserPlus } from "lucide-react";
-  import { useAssignMutation, useDeleteAssignedTaskMutation, useDeleteUserMutation,  useUpdateAssignedTaskMutation,  useUpdateUserMutation } from "@/hooks/use-mutate";
+  import { Loader2, Pencil, Trash2, Search, UserPlus, CheckCircle, XCircle } from "lucide-react";
+  import { useAssignMutation, useCreateUserMutation, useDeleteAssignedTaskMutation, useDeleteUserMutation,  useUpdateAssignedTaskMutation,  useUpdateUserMutation } from "@/hooks/use-mutate";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { on } from "events";
 import { Value } from "@radix-ui/react-select";
+import { z } from "zod";
 
   type UserWithoutPassword = Omit<User, 'password'>;
 
   export default function UserManagement() {
- 
+     const { user } = useAuth();
     const [searchQuery, setSearchQuery] = useState("");
-    const [roleFilter, setRoleFilter] = useState("all");
+
+    const [roleFilter, setRoleFilter] = useState("user");
     const [currentPage, setCurrentPage] = useState(1);
     const [userToDelete, setUserToDelete] = useState<UserWithoutPassword | null>(null);
     const [userToEdit, setUserToEdit] = useState<UserWithoutPassword | null>(null);
     const [userToAddTask, setUserToAddTask] = useState<UserWithoutPassword | null>(null);
+     const [userToCreate, setUserToCreate] = useState<InsertUser | null>(null);
     const itemsPerPage = 10;
-    const { user } = useAuth();
+    
     const [selectedExercises, setSelectedExercises] = useState<
     { exerciseId: number; dueDate: string }[]
   >([]);
     const [selectedExercisesToDelete, setSelectedExercisesToDelete] = useState<
     { id: number}[]
   >([]);
+
+  
+
   const { data: assignedTasks, isLoading: assignedLoading } = useQuery<(AssingedTask & { taskName: string | null } & {authorName: string | null })[]>(
   {
     queryKey: [`/api/assignedTasks/${userToAddTask?.id}`],
@@ -71,15 +77,24 @@ import { Value } from "@radix-ui/react-select";
   }
 );
 
-
-    // Fetch users
+const queries = assignedSolvedTasks?.map((task) => ({
+    queryKey: [`/api/task_prog/${task.taskId}/${userToAddTask?.id}`],
+    queryFn: async (): Promise<({exercisesNumber: number | null} & TaskProgress)[]> => {
+      const res = await fetch(`/api/task_prog/${task.taskId}/${userToAddTask?.id}`);
+      if (!res.ok) throw new Error("Failed to fetch task progress");
+      return res.json();
+    },
+    enabled: !!userToAddTask?.id,
+  })) || [];
+  const results = useQueries({queries})
     const { data: users, isLoading, error } = useQuery<UserWithoutPassword[]>({
       queryKey: ["/api/admin/users"],
     });
     const { data: tasks } = useQuery<Task[]>({
       queryKey: ["/api/tasks"],
     });
-   
+
+    
     // Delete user mutation
     const deleteUserMutation = useDeleteUserMutation( () => setUserToDelete(null))
 
@@ -119,14 +134,13 @@ import { Value } from "@radix-ui/react-select";
       setUserToAddTask(null);
     };
 
-  
-    // Handle search and filtering
     const filteredUsers = users
       ? users.filter((user) => {
           const matchesSearch =
             user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
             user.fullName.toLowerCase().includes(searchQuery.toLowerCase());
           const matchesRole = roleFilter === "all" || user.role === roleFilter;
+
           return matchesSearch && matchesRole;
         })
       : [];
@@ -171,8 +185,30 @@ import { Value } from "@radix-ui/react-select";
         .map((n) => n[0])
         .join("");
     };
+const pad = (n: number) => String(n).padStart(2, "0");
 
-    if (isLoading ) {
+// Получаем локальное время в формате "YYYY-MM-DDTHH:mm"
+const getLocalDateTimeForMin = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = pad(now.getMonth() + 1); // Месяцы с 0
+  const day = pad(now.getDate());
+  const hours = pad(now.getHours());
+  const minutes = pad(now.getMinutes());
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+};
+
+
+const createUserMutation = useCreateUserMutation();
+const handleCreateUser = (e: React.FormEvent) => {
+      e.preventDefault();
+     if (userToCreate) 
+    createUserMutation.mutate(
+      userToCreate  
+    );
+    setUserToCreate(null);
+  };
+    if (isLoading || assignedSolvedLoading || assignedExpiredLoading || assignedLoading) {
       return (
         <div className="flex justify-center items-center py-12">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -202,6 +238,7 @@ import { Value } from "@radix-ui/react-select";
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
           </div>
           <div className="flex space-x-2">
+              {user?.role === 'admin' &&
             <Select value={roleFilter} onValueChange={setRoleFilter}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="All Roles" />
@@ -213,59 +250,96 @@ import { Value } from "@radix-ui/react-select";
                 <SelectItem value="admin">Администратор</SelectItem>
               </SelectContent>
             </Select>
-
-            <Dialog>
+  }
+            {user?.role === 'admin' &&
+            <Dialog open={!!userToCreate} onOpenChange={(open) => !open && setUserToCreate(null)}>
               <DialogTrigger asChild>
-                <Button>
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Добавить пользователя
-                </Button>
+                <Button onClick={() => setUserToCreate({ fullName: "", username: "", role: "user", password: "" })}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Добавить пользователя
+              </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Add New User</DialogTitle>
-                  <DialogDescription>
-                    Create a new user account. The user will receive an email with instructions to set their password.
-                  </DialogDescription>
+                  <DialogTitle>Создание нового пользователя</DialogTitle>
+                  
                 </DialogHeader>
-                <form className="space-y-4 py-4">
-                  <div className="grid grid-cols-1 gap-4">
-                    <div className="space-y-2">
-                      <label htmlFor="fullName" className="text-sm font-medium">
-                        Полное имя
-                      </label>
-                      <Input id="fullName" placeholder="John Doe" />
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="email" className="text-sm font-medium">
-                        Email
-                      </label>
-                      <Input id="email" type="email" placeholder="john@example.com" />
-                    </div>
-                    <div className="space-y-2">
-                      <label htmlFor="role" className="text-sm font-medium">
-                        Роль
-                      </label>
-                      <Select defaultValue="user">
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="user">Student</SelectItem>
-                          <SelectItem value="teacher">Teacher</SelectItem>
-                          <SelectItem value="admin">Admin</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </form>
-                <DialogFooter>
-                  <Button type="submit" className="w-full sm:w-auto">
-                    Create User
-                  </Button>
-                </DialogFooter>
+                {
+                  userToCreate && 
+                  <form onSubmit={handleCreateUser} className="space-y-4 py-4">
+      <div className="grid grid-cols-1 gap-4">
+        <div className="space-y-2">
+          <label htmlFor="create-fullName" className="text-sm font-medium">
+            Полное имя
+          </label>
+          <Input
+            id="create-fullName"
+            value={userToCreate?.fullName}
+            onChange={(e) =>
+                        setUserToCreate({ ...userToCreate, fullName: e.target.value })
+                      }
+            placeholder="John Doe"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="create-nickName" className="text-sm font-medium">
+            Никнейм
+          </label>
+          <Input
+            id="create-nickName"
+            value={userToCreate?.username}
+            onChange={(e) =>
+                        setUserToCreate({ ...userToCreate, username: e.target.value })
+                      }
+            placeholder="johndoe"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="create-role" className="text-sm font-medium">
+            Роль
+          </label>
+          <Select value={userToCreate?.role} onValueChange={(value) =>
+                        setUserToCreate({ ...userToCreate, role: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Выберите роль" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="user">Студент</SelectItem>
+              <SelectItem value="teacher">Преподаватель</SelectItem>
+              <SelectItem value="admin">Администратор</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="create-password" className="text-sm font-medium">
+            Пароль
+          </label>
+          <Input
+            type="password"
+            id="create-password"
+            value={userToCreate?.password}
+            onChange={(e) =>
+                        setUserToCreate({ ...userToCreate, password: e.target.value })}
+            placeholder="••••••••"
+          />
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        className="mt-4 bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
+      >
+        Создать пользователя
+      </button>
+    </form>
+  }
+               
               </DialogContent>
             </Dialog>
+  }
           </div>
         </div>
 
@@ -304,7 +378,7 @@ import { Value } from "@radix-ui/react-select";
                           : "bg-blue-100 text-blue-800"
                       }`}
                     >
-                      {user.role === "user" ? "Student" : user.role === "teacher" ? "Teacher" : "Admin"}
+                      {user.role === "user" ? "Студент" : user.role === "teacher" ? "Преподаватель" : "Администратор"}
                     </span>
                   </td>
       
@@ -321,6 +395,7 @@ import { Value } from "@radix-ui/react-select";
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
+                    {user.role === "admin" && 
                     <Button
                       variant="ghost"
                       size="sm"
@@ -329,6 +404,7 @@ import { Value } from "@radix-ui/react-select";
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
+  }
                   </td>
                 </tr>
               ))}
@@ -546,6 +622,7 @@ import { Value } from "@radix-ui/react-select";
                 <label className="text-sm block mb-1">Срок сдачи:</label>
                 <Input
                   type="datetime-local"
+                  min={getLocalDateTimeForMin()}
                   value={task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : ""}
                   onChange={(e) => handleUpdateAssignedTask(task.id, {dueDate: new Date(e.target.value)})}
                 />
@@ -593,6 +670,7 @@ import { Value } from "@radix-ui/react-select";
                 <label className="text-sm block mb-1">Срок сдачи:</label>
                 <Input
                   type="datetime-local"
+                  min={getLocalDateTimeForMin()}
                   value={task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : ""}
                   onChange={(e) => handleUpdateAssignedTask(task.id, {dueDate: new Date(e.target.value)})}
                 />
@@ -641,9 +719,34 @@ import { Value } from "@radix-ui/react-select";
                 <label className="text-sm block mb-1">Срок сдачи:</label>
                 <Input
                   type="datetime-local"
+                  min={getLocalDateTimeForMin()}
                   value={task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : ""}
                   onChange={(e) => handleUpdateAssignedTask(task.id, {dueDate: new Date(e.target.value)})}
                 />
+              </div>
+               <div>
+                <label className="text-sm block mb-1">Результаты:</label> 
+                   <div className="flex flex-col gap-4 mt-2">
+            {results && results.map((taskProgs) => (
+              
+              <div  className="flex gap-4">
+                
+                <div className="p-2 rounded flex-1">
+                  <p>
+                    {taskProgs.data?.map((taskProg, index) => (
+                      <div className="p-2 rounded w-64">
+                  <p className="font-bold mb-2">Попытка {index + 1}</p>
+                  <p>
+                    <strong>Правильных ответов:</strong> {taskProg.correctAnswers}/{taskProg.exercisesNumber}
+                  </p>
+                </div>
+                
+                    ))}
+                   </p> 
+                </div>
+              </div>
+            ))}
+          </div>
               </div>
             </div>
             </>
@@ -657,46 +760,51 @@ import { Value } from "@radix-ui/react-select";
 
 
       {/* Список доступных заданий для назначения */}
-      {tasks?.map((task) => {
-        const selected = selectedExercises.find(e => e.exerciseId === task.id);
-        return (
-          <div key={task.id} className="border p-3 rounded-md space-y-2">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                checked={!!selected}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    setSelectedExercises(prev => [...prev, { exerciseId: task.id, dueDate: "" }]);
-                  } else {
-                    setSelectedExercises(prev => prev.filter(e => e.exerciseId !== task.id));
-                  }
-                }}
-              />
-              <span>{task.name}</span>
-            </div>
+      {tasks
+  ?.filter(task => !assignedTasks?.some(assigned => assigned.taskId === task.id))
+  .filter(task => !assignedSolvedTasks?.some(assigned => assigned.taskId === task.id))
+.filter(task => !assignedExpiredTasks?.some(assigned => assigned.taskId === task.id))
+  .map(task => {
+    const selected = selectedExercises.find(e => e.exerciseId === task.id);
+    return (
+      <div key={task.id} className="border p-3 rounded-md space-y-2">
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            checked={!!selected}
+            onChange={(e) => {
+              if (e.target.checked) {
+                setSelectedExercises(prev => [...prev, { exerciseId: task.id, dueDate: "" }]);
+              } else {
+                setSelectedExercises(prev => prev.filter(e => e.exerciseId !== task.id));
+              }
+            }}
+          />
+          <span>{task.name}</span>
+        </div>
 
-            {selected && (
-              <div className="pl-6">
-                <label className="text-sm block mb-1">Срок сдачи:</label>
-                <Input
-                  type="datetime-local"
-                  value={selected.dueDate}
-                  onChange={(e) => {
-                    setSelectedExercises(prev =>
-                      prev.map(item =>
-                        item.exerciseId === task.id
-                          ? { ...item, dueDate: e.target.value }
-                          : item
-                      )
-                    );
-                  }}
-                />
-              </div>
-            )}
+        {selected && (
+          <div className="pl-6">
+            <label className="text-sm block mb-1">Срок сдачи:</label>
+            <Input
+              type="datetime-local"
+              min={getLocalDateTimeForMin()}
+              value={selected.dueDate}
+              onChange={(e) => {
+                setSelectedExercises(prev =>
+                  prev.map(item =>
+                    item.exerciseId === task.id
+                      ? { ...item, dueDate: e.target.value }
+                      : item
+                  )
+                );
+              }}
+            />
           </div>
-        );
-      })}
+        )}
+      </div>
+    );
+  })}
     </div>
 
     <DialogFooter>
@@ -705,7 +813,6 @@ import { Value } from "@radix-ui/react-select";
       </Button>
     </DialogFooter>
   </form>
-
 )}
   </DialogContent>
 </Dialog>

@@ -19,7 +19,7 @@ getUserByUsername(username: string): Promise<User | undefined>;
 createUser(user: InsertUser): Promise<User>;
 updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
 getAllUsers(): Promise<User[]>;
-
+deleteUser(id: number): Promise<void>;
 // Exercise methods
 getExercise(id: number): Promise<Exercise | undefined>;
 getExercises(grammarTopic_id?: number): Promise<Exercise[]>;
@@ -47,26 +47,15 @@ updateTaskProg(id: number, num: any, isActive?: boolean): Promise<TaskProgress |
 getTaskExerciseProgs(taskProgId?: number): Promise<({correctSentence: string | null} & ExerciseProgress)[]>;
 getLastExerciseProgress( userId: number, seq: number): Promise<ExerciseProgress>
 getExerciseProgress(userId: number): Promise<ExerciseProgress[]>;
-getExerciseProgressSummary(userId: number): Promise<{
-totalExercises: number;
-correctExercises: number;
-incorrectExercises: number;
-accuracy: number;
-recentResults: ExerciseProgress[];
-}>;
+
 createExerciseProgress(progress: InsertExerciseProgress): Promise<ExerciseProgress>;
 
 
 // Task progress methods
 getTaskProgress(taskProgressId: number): Promise<TaskProgress>;
 getLastTaskProgress( userId: number): Promise<TaskProgress>
-getTaskProgressSummary(userId: number): Promise<{
-totalExercises: number;
-correctExercises: number;
-incorrectExercises: number;
-accuracy: number;
-recentResults: ExerciseProgress[];
-}>;
+getUserTaskProgress( userId: number, taskId: number): Promise<TaskProgress[]>
+
 createTaskProgress(progress: InsertTaskProgress): Promise<TaskProgress>;
 
 // Grammar topic methods
@@ -83,7 +72,7 @@ getAssignedSolvedTasks(userId: number): Promise<(AssingedTask & { taskName: stri
 deleteAssignedTask(id: number): Promise<void>;
 updateAssignedTask(id: number, exerciseUpdate: Partial<InsertAssignedTask>): Promise<AssingedTask | undefined>;
 createAssignedTask(exercise: InsertAssignedTask): Promise<AssingedTask>;
-
+solveAssignedTask(taskId: number): Promise<AssingedTask | undefined>;
 // Session store
 sessionStore: session.Store;
 }

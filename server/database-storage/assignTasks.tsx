@@ -105,6 +105,21 @@ import { db } from "server/db";
         }
       }
 
+    export async function solvAssignedTask(taskId: number ): Promise<AssingedTask | undefined> {
+        try {
+          const [updatedExercise] = await db
+            .update(assignedTasks)
+            .set({status: "solved"})
+            .where(eq(assignedTasks.taskId, taskId))
+            .returning();
+          
+          return updatedExercise;
+        } catch (error) {
+          console.error("Error updating exercise:", error);
+          return undefined;
+        }
+      }
+
 
        export async function createAssignedTask(exercise: InsertAssignedTask): Promise<AssingedTask> {
   try {

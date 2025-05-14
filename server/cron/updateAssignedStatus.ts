@@ -6,7 +6,6 @@ import { query } from "express";
 import { queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 
-
 // Запуск каждый час
 // cron.schedule("0 * * * *", async () => {
 // Запуск каждую минуту

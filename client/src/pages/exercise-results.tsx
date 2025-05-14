@@ -10,19 +10,21 @@ import { toast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { z } from "zod";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function ExerciseResults() {
   const { taskId, progressId, exerciseId, seq} = useParams<{taskId : string, progressId: string, exerciseId: string, seq: string}>();
-  
+  const {user} = useAuth()
   const searchParams = new URLSearchParams(window.location.search);
   const isCorrect = searchParams.get('isCorrect') === 'true';
   const isSkipped = searchParams.get('skipped') === 'true';
+ queryClient.invalidateQueries({queryKey: [`/api/task_exercises_prog/${progressId}`]});
 
+   const [timeLeft, setTimeLeft] = useState<number | null>(() => {
+  const stored = localStorage.getItem("timeLeft");
+  return stored ? parseInt(stored, 10) : null;
+});
 
-  const [timeLeft, setTimeLeft] = useState(() => {
-    const stored = localStorage.getItem("timeLeft");
-    return stored ? parseInt(stored, 10) : 0;
-  });
 const nextSeq = parseInt(seq) + 1;
  const { data: nextExercise, isLoading: nextExerciseLoading, error: nextExerciseError } = useQuery<Exercise>({
     queryKey: [`/api/task_exercises/${taskId}/seq/${nextSeq}`],
@@ -70,7 +72,7 @@ const nextSeq = parseInt(seq) + 1;
       return await res.json();
     },
     onSuccess: () => {
-      
+     
       navigate(`/tasks/${taskId}/prog/${progressId}/results`)
     },
     onError: (error: Error) => {
@@ -82,9 +84,28 @@ const nextSeq = parseInt(seq) + 1;
     },
   });
 
+    const updateAssignedTaskStatusMutation =  useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("PATCH", `/api/assignedTasks/${taskId}`);
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({queryKey: [`/api/assignedTasks/${user?.id}`]});
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Обновление не выполнено",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   useEffect(() => {
+ if (timeLeft === null) return;
     if (timeLeft <= 0) {
+    updateAssignedTaskStatusMutation.mutate();
+
       updateTaskMutation.mutate( 
         {isActive: false}
      )
@@ -92,7 +113,7 @@ const nextSeq = parseInt(seq) + 1;
     }
   
     const timer = setTimeout(() => {
-      setTimeLeft(prev => prev - 1000);
+      setTimeLeft(prev => (prev !== null ? prev - 1000 : null));
     }, 1000);
   
     return () => clearTimeout(timer);
@@ -100,16 +121,19 @@ const nextSeq = parseInt(seq) + 1;
   
   const handleComplete = () => {
     if (task && nextSeq >=  Number(task.exercisesNumber)) {
+    updateAssignedTaskStatusMutation.mutate();
       updateTaskMutation.mutate( 
-         {isActive: true}
+         {isActive: false}
       )
-      queryClient.invalidateQueries({queryKey: [`/api/task_exercises_prog/${progressId}`]});
+      
       
 }
  else {
+  if (timeLeft !== null)
   localStorage.setItem("timeLeft", String(timeLeft));
+
   if (nextExercise?.id)
-  navigate(`/tasks/${taskId}/prog/${progressId}/exercises/${nextExercise?.id + 1}/seq/${nextSeq}`)
+  navigate(`/tasks/${taskId}/prog/${progressId}/exercises/${nextExercise?.id}/seq/${nextSeq}`)
  } 
 }
   if (isLoading) {
@@ -148,6 +172,7 @@ const nextSeq = parseInt(seq) + 1;
       <Navbar />
       
       <main className="container mx-auto pt-20 pb-12 px-4">
+        {timeLeft !== null && (
       <p className="text-lg text-gray-600 mb-8">{
 (() =>  {
   const totalSeconds = Math.floor(timeLeft / 1000); 
@@ -157,7 +182,7 @@ const nextSeq = parseInt(seq) + 1;
   return `${String(hours).length === 1 ? `0${hours}` : hours}:${String(minutes).length === 1 ? `0${minutes}` : minutes}:${String(seconds).length === 1 ? `0${seconds}` : seconds}`
 })()
 }
-</p>
+</p>)}
         <div className="py-16">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">

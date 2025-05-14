@@ -54,44 +54,7 @@ export async function getTaskExerciseProgs(taskProgId?: number): Promise<({corre
         throw new Error("Failed to get task progress");
       }
     }
-    export  async function getExerciseProgressSummary(userId: number): Promise<{
-        totalExercises: number;
-        correctExercises: number;
-        incorrectExercises: number;
-        accuracy: number;
-        recentResults: ExerciseProgress[];
-      }> {
-        try {
-          // Get all user progress entries for the user
-          const progressEntries = await getExerciseProgress(userId);
-          
-          // Calculate summary statistics
-          const totalExercises = progressEntries.length;
-          const correctExercises = progressEntries.filter(p => p.isCorrect).length;
-          const incorrectExercises = totalExercises - correctExercises;
-          const accuracy = totalExercises > 0 ? (correctExercises / totalExercises) * 100 : 0;
-          
-          // Get the 5 most recent results
-          const recentResults = progressEntries.slice(0, 5);
-          
-          return {
-            totalExercises,
-            correctExercises,
-            incorrectExercises,
-            accuracy,
-            recentResults
-          };
-        } catch (error) {
-          console.error("Error getting user progress summary:", error);
-          return {
-            totalExercises: 0,
-            correctExercises: 0,
-            incorrectExercises: 0,
-            accuracy: 0,
-            recentResults: []
-          };
-        }
-      }
+
 
       export  async function createExerciseProgress(progress: InsertExerciseProgress): Promise<ExerciseProgress> {
           try {
@@ -102,9 +65,6 @@ export async function getTaskExerciseProgs(taskProgId?: number): Promise<({corre
               progress
               )
               .returning();
-
-              
-            
             return newProgress;
           } catch (error) {
             console.error("Error creating user progress:", error);

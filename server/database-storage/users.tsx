@@ -15,6 +15,16 @@ import * as crypto from "crypto";
     }
   }
 
+     export async function deleteUser(id: number): Promise<void> {
+         try {
+           await db.delete(users).where(eq(users.id, id));
+         } catch (error) {
+           console.error("Error deleting task:", error);
+           throw new Error("Failed to delete task");
+         }
+       }
+
+
    export async function getUserByUsername(username: string): Promise<User | undefined> {
       try {
         const [user] = await db.select().from(users).where(eq(users.username, username));
