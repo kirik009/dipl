@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Exercise, insertExerciseSchema, insertTaskSchema, Task } from "@shared/schema";
-import { useToast } from "@/hooks/use-toast";
+import { toast, useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -102,20 +102,35 @@ export default function TaskEditor() {
         }
       };
   // Handle form submission
-  const onSubmit = (values: FormValues) => {
-    // Remove the extra fields we added for UI purposes
-    const taskData = {
-      ...values,
-      exercisesNumber: exercises?.length, // добавляем актуальное значение
-    };
-    
-    if (isEditing) {
-      updateTaskMutation.mutate(taskData);
-    } else {
-      createTaskMutation.mutate(taskData);
-    }
-    updateExercisesMutation.mutate();
+const onSubmit = (values: FormValues) => {
+  if (!values.name.trim()) {
+    form.setError("name", { message: "Название обязательно" });
+    return;
+  }
+
+  if (!exercises || exercises.length === 0) {
+    toast({
+      title: "Ошибка",
+      description: "Добавьте хотя бы одно предложение перед сохранением.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  const taskData = {
+    ...values,
+    exercisesNumber: exercises.length,
   };
+
+  if (isEditing) {
+    updateTaskMutation.mutate(taskData);
+  } else {
+    createTaskMutation.mutate(taskData);
+  }
+
+  updateExercisesMutation.mutate();
+};
+
   
   const isLoading = isLoadingExercise;
   
@@ -142,7 +157,7 @@ export default function TaskEditor() {
     let cursorPosition = e.target.selectionStart || 0;
     if (cursorPosition == 2 || cursorPosition == 5) {
     setCursorPos(cursorPosition + 1);
-    console.log(cursorPosition)
+   
       cursorPosition += 1
   }
     else setCursorPos(cursorPosition);

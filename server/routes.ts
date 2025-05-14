@@ -7,6 +7,7 @@ import { z } from "zod";
 import { taskRoutes } from "./routes/taskRoutes";
 import { exerciseRoutes } from "./routes/exerciseRoutes";
 import { grammarRoutes } from "./routes/grammarRoutes";
+import { assignTasksRoutes } from "./routes/assignTasksRoutes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication routes
@@ -15,7 +16,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   taskRoutes(app);
   exerciseRoutes(app);
   grammarRoutes(app);
- 
+  assignTasksRoutes(app);
   app.get("/api/user/progress", async (req, res, next) => {
     try {
       if (!req.isAuthenticated()) {
@@ -64,7 +65,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid user ID" });
       }
   
-      const { fullName, username, role, level, password } = req.body;
+      const { fullName, username, role, password } = req.body;
   
       // Формируем объект обновления
       const userUpdate: Partial<User> = {};

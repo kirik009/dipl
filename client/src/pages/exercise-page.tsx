@@ -10,32 +10,33 @@ import  WordBank  from "@/components/ui/dnd/word-bank";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Exercise, Task, TaskProgress, taskProgress, insertTaskProgressSchema } from "@shared/schema";
+import { Exercise, Task, TaskProgress, taskProgress, insertTaskProgressSchema, ExerciseProgress } from "@shared/schema";
 import { Loader2, RefreshCw, SkipForward } from "lucide-react";
 import { ConsoleLogWriter } from "drizzle-orm";
 import { z } from "zod";
+import { useAuth } from "@/hooks/use-auth";
 export default function ExercisePage() {
-
+  const { user } = useAuth();
   const { taskId, progressId, exerciseId, seq } = useParams<{taskId : string, progressId: string, exerciseId: string, seq: string}>();
       
-  const { data: prog } = useQuery<TaskProgress>({
+  const { data: taskProg, isLoading: taskProgLoading, error: taskProgError } = useQuery<TaskProgress>({
           queryKey: [`/api/task_prog/${progressId}`],
-          queryFn: async () => {
-              const response = await fetch(`/api/task_prog/${progressId}`);
-              if (!response.ok) throw new Error("Failed to fetch tasks");
-              return response.json();
-            },
+        
         });
-
-  const { data: task } = useQuery<Task>({
-    queryKey: [`/api/tasks/${taskId}`],
-    queryFn: async () => {
-        const response = await fetch(`/api/tasks/${taskId}`);
-        if (!response.ok) throw new Error("Failed to fetch tasks");
-        return response.json();
-      },
+  const { data: exercise, isLoading, error } = useQuery<Exercise>({
+    queryKey: [`/api/exercises/${exerciseId}`],
   });
 
+  const { data: exerciseProgs, isLoading: exerciseProgsLoading, error: exerciseProgsError } =
+      useQuery<ExerciseProgress[]>({
+        queryKey: [`/api/task_exercises_prog/${progressId}`],
+        queryFn: async () => {
+          const response = await fetch(`/api/task_exercises_prog/${progressId}`);
+          if (!response.ok) throw new Error("Failed to fetch exercises progress");
+          return response.json();
+        },
+        
+      });
   const [, navigate] = useLocation();
   const { toast } = useToast();
   type WordItem = { id: string; text: string };  
@@ -49,35 +50,26 @@ export default function ExercisePage() {
   });
 
    type FormValues = z.infer<typeof insertTaskProgressSchema>;
-
+  
   const updateTaskMutation =  useMutation({
     mutationFn: async (data: FormValues) => {
-      const res = await apiRequest("PUT", `/api/task_prog/${progressId}`, data);
+      const res = await apiRequest("PATCH", `/api/task_prog/${progressId}`, data);
       return await res.json();
     },
     onSuccess: () => {
-      toast({
-        title: "task progress updated",
-        description: "The task progress has been successfully updated.",
-      });
-      navigate(`/tasks/${taskId}/prog/${progressId}/results`)
+      
+      
     },
-    onError: (error: Error) => {
-      toast({
-        title: "Update failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
+   
   });
 
 useEffect(() => {
 
       if (timeLeft <= 0) {
         updateTaskMutation.mutate( 
-          {}
+          {isActive: false}
        )
-        
+        navigate(`/tasks/${taskId}/prog/${progressId}/results`)
       }
     
       const timer = setTimeout(() => {
@@ -91,9 +83,7 @@ useEffect(() => {
 
 
   // Fetch exercise data
-  const { data: exercise, isLoading, error } = useQuery<Exercise>({
-    queryKey: [`/api/exercises/${exerciseId}`],
-  });
+
 
    
   useEffect(() => {
@@ -112,21 +102,33 @@ useEffect(() => {
   const submitMutation = useMutation({
     mutationFn: async () => {
       const userAnswer = sentence.map(w => w.text).join(" ");
+     const correctAnswer = exercise?.correctSentence.replace(/[!?.]/g, "")
+     if (exerciseProgs) {
      
-      const res = await apiRequest("POST", "/api/exercises/submit", {
-        taskId: parseInt(taskId),
+      const res = await apiRequest("PATCH", `/api/exerciseProg/${exerciseProgs[Number(seq)]?.id}`, {
         exerciseId: parseInt(exerciseId),
+        isCorrect: userAnswer === correctAnswer,
         userAnswer,
-        taskProgressId: parseInt(progressId),
+        completedAt: new Date(),
       });
       return await res.json();
+      }
     },
     onSuccess: (data) => {
+       
+      if (typeof taskProg?.correctAnswers == 'number') {
+        
+        updateTaskMutation.mutate( 
+          
+          {correctAnswers: taskProg?.correctAnswers + (data.isCorrect ? 1 : 0),
+            isActive: true,
+          }
+       )}
       navigate(`/tasks/${taskId}/prog/${progressId}/exercises/${exerciseId}/seq/${seq}/results?isCorrect=${data.isCorrect}`);
     },
       onError: (error: Error) => {
       toast({
-        title: "Error submitting answer",
+        title: "Ошибка при отправке результата задания",
         description: error.message,
         variant: "destructive",
       });
@@ -161,8 +163,8 @@ useEffect(() => {
   const handleCheckAnswer = () => {
     if (sentence.length === 0) {
       toast({
-        title: "Please build a sentence",
-        description: "Drag words from the word bank to form a sentence.",
+        title: "Пожалуйста постройте предложение",
+        description: "Перетаскивайте слова, чтобы сформировать предложение.",
         variant: "destructive",
       });
       return;
@@ -178,7 +180,7 @@ useEffect(() => {
     navigate(`/tasks/${taskId}/results/${exerciseId}?skipped=true`);
   };
   
-  if (isLoading) {
+  if (isLoading &&  exerciseProgsLoading && taskProgLoading) {
     return (
       <>
         <Navbar />
@@ -228,12 +230,7 @@ useEffect(() => {
                 <div className="flex justify-between items-center">
                   <h2 className="font-heading text-2xl font-semibold">Sentence Builder</h2>
                   <div className="flex items-center space-x-4">
-                    <div className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                      <span className="capitalize">{exercise.difficulty}</span>
-                    </div>
+                    
                     {/* <div className="bg-white text-primary px-3 py-1 rounded-full font-medium text-sm">
                       {exercise.grammarTopic}
                     </div> */}

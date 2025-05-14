@@ -1,7 +1,7 @@
 import type { Express } from "express";
 
 import { storage } from "../storage";
-import { insertExerciseSchema,  submitExerciseSchema, insertTaskSchema, insertTaskProgressSchema } from "@shared/schema";
+import { insertExerciseSchema,  submitExerciseSchema, insertTaskSchema, insertTaskProgressSchema, insertExerciseProgressSchema, updateExerciseProgressSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function exerciseRoutes(app: Express) { 
@@ -83,8 +83,24 @@ export async function exerciseRoutes(app: Express) {
 
       app.get("/api/task_exercises_prog/:id", async (req, res, next) => {
         try {
+          const taskProgId = parseInt(req.params.id);
+          const exercises = await storage.getTaskExerciseProgs(taskProgId);
+          
+          if (!exercises ) {
+            return res.status(404).json({ message: "Exercises for this task not found" });
+          }
+          
+          res.json(exercises);
+        } catch (error) {
+          next(error);
+        }
+      });
+
+            app.get("/api/last_exercise_prog/:id/:seq", async (req, res, next) => {
+        try {
           const id = parseInt(req.params.id);
-          const exercises = await storage.getTaskExerciseProgs(id);
+          const seq = parseInt(req.params.seq);
+          const exercises = await storage.getLastExerciseProgress(id, seq);
           
           if (!exercises ) {
             return res.status(404).json({ message: "Exercises for this task not found" });
@@ -200,4 +216,99 @@ export async function exerciseRoutes(app: Express) {
               next(error);
             }
           });
+
+
+
+    app.post("/api/exercises/submit", async (req, res, next) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: "Not authenticated" });
+      }
+      const validatedData = insertExerciseProgressSchema.parse(req.body);
+      const exerciseProgress = await storage.createExerciseProgress({
+        userId: req.user.id,
+        taskProgressId: validatedData.taskProgressId,
+      });
+      res.status(201).json({
+        ...exerciseProgress,
+      });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      next(error);
+    }
+  });
+
+    app.patch("/api/exerciseProg/:id", async (req, res, next) => {
+            try {     
+              const taskId = parseInt(req.params.id);
+             (req.body);
+                const { completedAt, ...rest} = req.body;
+                                 const validatedData = updateExerciseProgressSchema.parse({
+                        ...rest,
+                        completedAt: completedAt ? new Date(completedAt) : null,
+                      });
+              const updatedTask = await storage.updateExerciseProgress(taskId, validatedData);
+           
+              if (!updatedTask) {
+                return res.status(404).json({ message: "Exercise not found" });
+              }
+              
+              res.json(updatedTask);
+            } catch (error) {
+              if (error instanceof z.ZodError) {
+                return res.status(400).json({ 
+                  message: "Validation error", 
+                  errors: error.errors 
+                });
+              }
+              next(error);
+            }
+          });
+  
+
+  //     app.post("/api/exercises/submit", async (req, res, next) => {
+  //   try {
+  //     if (!req.isAuthenticated()) {
+  //       return res.status(401).json({ message: "Not authenticated" });
+  //     }
+      
+  //     const validatedData = submitExerciseSchema.parse(req.body);
+      
+  //     const exercise = await storage.getExercise(validatedData.exerciseId);
+  //     if (!exercise) {
+  //       return res.status(404).json({ message: "Exercise not found" });
+  //     }
+      
+  //     // Check if answer is correct (normalized: lowercase, no punctuation, trimmed)
+  //     const normalizedCorrect = exercise.correctSentence.toLowerCase().replace(/[^\w\s]/g, '').trim();
+  //     const normalizedAnswer = validatedData.userAnswer.toLowerCase().replace(/[^\w\s]/g, '').trim();
+  //     const isCorrect = normalizedCorrect === normalizedAnswer;
+  //     const exerciseProgress = await storage.createExerciseProgress({
+  //       userId: req.user.id,
+  //       exerciseId: validatedData.exerciseId,
+  //       isCorrect,
+  //       userAnswer: validatedData.userAnswer,
+  //       taskProgressId: validatedData.taskProgressId,
+  //     });
+
+  //     res.status(201).json({
+  //       ...exerciseProgress,
+  //       exercise,
+  //       isCorrect,
+  //     });
+  //   } catch (error) {
+  //     if (error instanceof z.ZodError) {
+  //       return res.status(400).json({ 
+  //         message: "Validation error", 
+  //         errors: error.errors 
+  //       });
+  //     }
+  //     next(error);
+  //   }
+  // });
 }

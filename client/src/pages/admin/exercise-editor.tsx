@@ -174,7 +174,7 @@ export default function ExerciseEditor() {
         });
         return;
       }
-      console.log(text)
+      
       // Trim and set the translation
       form.setValue(formName, text.trim());
       

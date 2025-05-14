@@ -32,13 +32,23 @@ export const exercises = pgTable("exercises", {
   createdBy: integer("created_by").references(() => users.id),
 });
 
+export const assignedTasks = pgTable("assigned_tasks", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  taskId: integer("task_id").references(() => tasks.id),
+  assignedBy: integer("assigned_by").references(() => users.id),
+  dueDate: timestamp("due_date"),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  status: text("status").default('pending'),
+});
+
 export const exerciseProgress = pgTable("exercise_progress", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
-  exerciseId: integer("exercise_id").references(() => exercises.id).notNull(),
-  isCorrect: boolean("is_correct").notNull(),
-  userAnswer: text("user_answer").notNull(),
-  completedAt: timestamp("completed_at").defaultNow(),
+  exerciseId: integer("exercise_id").references(() => exercises.id),
+  isCorrect: boolean("is_correct"),
+  userAnswer: text("user_answer"),
+  completedAt: timestamp("completed_at"),
   taskProgressId: integer("task_progress_id").references(() => taskProgress.id).notNull(),
 });
 
@@ -66,6 +76,7 @@ export const taskProgress = pgTable("task_progress", {
   correctAnswers: integer("correct_answers"),
   completedAt: timestamp("completed_at"),
   startedAt: timestamp("started_at").defaultNow().notNull(),
+  isActive: boolean("is_active").default(true),
 });
 
 // Insert schemas
@@ -89,6 +100,15 @@ export const insertExerciseSchema = createInsertSchema(exercises).pick({
   task_id: true,
 });
 
+export const insertAssignedTaskSchema = createInsertSchema(assignedTasks).pick({
+  userId: true,
+  assignedAt: true,
+  assignedBy: true,
+  dueDate: true,
+  taskId: true,
+  status: true,
+});
+
 export const insertTaskSchema = createInsertSchema(tasks).pick({
   name: true,
   createdBy: true,
@@ -106,12 +126,21 @@ export const insertExerciseProgressSchema = createInsertSchema(exerciseProgress)
   taskProgressId: true,
 });
 
+export const updateExerciseProgressSchema = createInsertSchema(exerciseProgress).pick({
+  
+  exerciseId: true,
+  isCorrect: true,
+  userAnswer: true,
+  completedAt: true,
+});
+
 export const insertTaskProgressSchema = createInsertSchema(taskProgress).pick({
   id: true,
   userId: true,
   taskId: true,
   correctAnswers: true,
   completedAt: true,
+  isActive: true,
 });
 
 export const insertGrammarTopicSchema = createInsertSchema(grammarTopics).pick({
@@ -150,8 +179,12 @@ export type LoginUserInput = z.infer<typeof loginUserSchema>;
 export type Exercise = typeof exercises.$inferSelect;
 export type InsertExercise = z.infer<typeof insertExerciseSchema>;
 
+export type AssingedTask = typeof assignedTasks.$inferSelect;
+export type InsertAssignedTask = z.infer<typeof insertAssignedTaskSchema>;
+
 export type ExerciseProgress = typeof exerciseProgress.$inferSelect;
 export type InsertExerciseProgress = z.infer<typeof insertExerciseProgressSchema>;
+export type UpdateExerciseProgress = z.infer<typeof updateExerciseProgressSchema>;
 
 export type GrammarTopic = typeof grammarTopics.$inferSelect;
 export type InsertGrammarTopic = z.infer<typeof insertGrammarTopicSchema>;

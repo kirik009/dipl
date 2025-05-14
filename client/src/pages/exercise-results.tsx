@@ -7,7 +7,7 @@ import { CheckCircle, XCircle } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { navigate } from "wouter/use-browser-location";
 import { toast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { z } from "zod";
 import { useEffect, useState } from "react";
 
@@ -23,10 +23,19 @@ export default function ExerciseResults() {
     const stored = localStorage.getItem("timeLeft");
     return stored ? parseInt(stored, 10) : 0;
   });
+const nextSeq = parseInt(seq) + 1;
+ const { data: nextExercise, isLoading: nextExerciseLoading, error: nextExerciseError } = useQuery<Exercise>({
+    queryKey: [`/api/task_exercises/${taskId}/seq/${nextSeq}`],
+    queryFn: async () => {
+        const response = await fetch(`/api/task_exercises/${taskId}/seq/${nextSeq}`); //возможно  seq
+        if (!response.ok) throw new Error("Failed to fetch exercises");
+        return response.json();
+      },
+      staleTime: 0,           
+  refetchOnMount: true, 
+  }); 
 
-
-
-
+ 
   const { data: exercise, isLoading: exerciseLoading, error: exerciseError } = useQuery<Exercise>({
     queryKey: [`/api/task_exercises/${taskId}/seq/${seq}`],
     queryFn: async () => {
@@ -48,28 +57,25 @@ export default function ExerciseResults() {
   refetchOnMount: true, 
     });
 
-    const  isLoading = exerciseLoading || taskLoading;
-    const error = taskError || exerciseError ;
+    const  isLoading = exerciseLoading || taskLoading || nextExerciseLoading;
+    const error = taskError || exerciseError || exerciseError;
     
-  const nextExerciseId = parseInt(exerciseId) + 1;
-  const nextSeq = parseInt(seq) + 1;
+ 
+  
   type FormValues = z.infer<typeof insertTaskProgressSchema>;
 
   const updateTaskMutation =  useMutation({
     mutationFn: async (data: FormValues) => {
-      const res = await apiRequest("PUT", `/api/task_prog/${progressId}`, data);
+      const res = await apiRequest("PATCH", `/api/task_prog/${progressId}`, data);
       return await res.json();
     },
     onSuccess: () => {
-      toast({
-        title: "task progress updated",
-        description: "The task progress has been successfully updated.",
-      });
+      
       navigate(`/tasks/${taskId}/prog/${progressId}/results`)
     },
     onError: (error: Error) => {
       toast({
-        title: "Update failed",
+        title: "Обновление не выполнено",
         description: error.message,
         variant: "destructive",
       });
@@ -80,7 +86,7 @@ export default function ExerciseResults() {
   useEffect(() => {
     if (timeLeft <= 0) {
       updateTaskMutation.mutate( 
-        {}
+        {isActive: false}
      )
       
     }
@@ -95,13 +101,15 @@ export default function ExerciseResults() {
   const handleComplete = () => {
     if (task && nextSeq >=  Number(task.exercisesNumber)) {
       updateTaskMutation.mutate( 
-         {}
+         {isActive: true}
       )
+      queryClient.invalidateQueries({queryKey: [`/api/task_exercises_prog/${progressId}`]});
       
 }
  else {
   localStorage.setItem("timeLeft", String(timeLeft));
-  navigate(`/tasks/${taskId}/prog/${progressId}/exercises/${nextExerciseId}/seq/${nextSeq}`)
+  if (nextExercise?.id)
+  navigate(`/tasks/${taskId}/prog/${progressId}/exercises/${nextExercise?.id + 1}/seq/${nextSeq}`)
  } 
 }
   if (isLoading) {

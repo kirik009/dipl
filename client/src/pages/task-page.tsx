@@ -11,17 +11,13 @@ import { Navbar } from "@/components/layout/navbar";
 
 
 import { Loader2, Pencil, Trash2, Search, FilePlus } from "lucide-react";
+import { query } from "express";
 export default function TaskPage() {
   const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const [, navigate] = useLocation();
-  const [searchQuery, setSearchQuery] = useState("");
-  
-  const [currentPage, setCurrentPage] = useState(1);
-  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
-  const itemsPerPage = 10;
  
-  // Fetch exercises
+
   const { data: task, isLoading, error } = useQuery<Task>({
     queryKey: [`/api/tasks/${id}`],
     queryFn: async () => {
@@ -34,7 +30,7 @@ export default function TaskPage() {
   const { data: exercise } = useQuery<Exercise>({
     queryKey: [`/api/task_exercises/${id}/seq/${0}`],
     queryFn: async () => {
-        const response = await fetch(`/api/task_exercises/${id}`);
+        const response = await fetch(`/api/task_exercises/${id}/seq/${0}`);
         if (!response.ok) throw new Error("Failed to fetch exercises");
         return response.json();
       },
@@ -53,13 +49,21 @@ export default function TaskPage() {
     },
      onSuccess: (data) => {
       const newProgressId = data.id;
-      if (exercise && Array.isArray(exercise)) {
-        const exerciseId = exercise[0].id;
+      if (exercise) {
+        const exerciseId = exercise.id;
+         if (task?.exercisesNumber){
+      for (let i = 0; i < task?.exercisesNumber; i++)  {
+        submitProgressMutation.mutate(newProgressId);}
+
+    }
+    
+        queryClient.invalidateQueries({queryKey: [`/api/last_task_prog/${user?.id}`]});
+        queryClient.invalidateQueries({queryKey: [`/api/task_prog/${newProgressId}`]});
+        queryClient.invalidateQueries({queryKey: [`/api/exercises/${exerciseId}`]});
+        
         navigate(`${id}/prog/${newProgressId}/exercises/${exerciseId}/seq/${0}`);
         
       }
-      
- 
         },
     onError: (error: Error) => {
       toast({
@@ -70,9 +74,31 @@ export default function TaskPage() {
     },
   });
 
-
+  const submitProgressMutation = useMutation({
+    mutationFn: async (newProgressId: number) => {
+     
+      const res = await apiRequest("POST", "/api/exercises/submit", {
+        
+        userId: user?.id,
+        taskProgressId: newProgressId,
+      });
+      return await res.json();
+    },
+    onSuccess: (newProgressId: number) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/task_exercises_prog/${newProgressId}`]});
+    },
+      onError: (error: Error) => {
+      toast({
+        title: "Ошибка при отправке задания",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
   const handleSubmit = () => {
     submitMutation.mutate();
+   
+    
     const [hours, minutes, seconds] = task?.timeConstraint ? task?.timeConstraint.split(":").map(Number) : [0, 0, 0];
     const durationMs = ((hours * 60 + minutes) * 60 + seconds) * 1000;
     const date = task ? new Date(task?.createdAt): new Date()
@@ -120,19 +146,7 @@ export default function TaskPage() {
                 >             
                     Начать тест
                 </button>
-      </div>
-
-      
-      {/* Empty state
-      {paginatedTasks.length === 0 && (
-        <div className="text-center py-12 bg-gray-50 rounded-md">
-          <p className="text-gray-500">No exercises found matching your criteria.</p>
-        </div>
-      )} */}
-
-  
-
-     
+      </div>     
     </div>
     </>
   );

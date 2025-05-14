@@ -4,6 +4,8 @@ import { GraduationCap, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { AssingedTask } from "@shared/schema";
 
 export function Navbar() {
   const { user, logoutMutation } = useAuth();
@@ -14,10 +16,12 @@ export function Navbar() {
   const handleLogout = () => {
     logoutMutation.mutate();
   };
-
+    const { data: assignedTasks, isLoading: assignedLoading, error: assignedError } = useQuery<(AssingedTask& { taskName: string | null }  & {authorName: string | null })[]>({
+    queryKey: [`/api/assignedTasks/${user?.id}`],
+  });
   const menuItems = [
     { href: "/", label: "Главная" },
-    { href: "/tasks", label: "Упражнения", protected: true },
+    { href: "/tasks", label: (assignedTasks && assignedTasks.length > 0) ? `Упражнения (${assignedTasks?.length})` : "Упражнения", protected: true },
     { href: "/profile", label: "Профиль", protected: true },
     { href: "/admin", label: "Панель администратора", admin: true },
     { href: "/admin", label: "Панель преподавателя", teacher: true}

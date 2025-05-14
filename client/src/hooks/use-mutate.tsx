@@ -4,7 +4,7 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { insertExerciseSchema, InsertGrammarTopic, insertTaskSchema, InsertUser, LoginUserInput, RegisterUserInput, Task, User } from "@shared/schema";
+import { AssingedTask, insertExerciseSchema, InsertGrammarTopic, insertTaskSchema, InsertUser, LoginUserInput, RegisterUserInput, Task, User } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import {  useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -35,7 +35,7 @@ export function useCreateTaskMutation() {
             description: "The task has been successfully created.",
           });
            queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });  
-          navigate("/tasks");
+          
         },
         onError: (error: Error) => {
           toast({
@@ -271,14 +271,14 @@ export function useCreateTaskMutation() {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
               toast({
-                title: " Task deleted",
-                description: "The task has been successfully deleted.",
+                title: "Операция выполнена",
+                description: "Задание успешно удалено.",
               });
               onSuccessCallback?.();
             },
             onError: (error: Error) => {
               toast({
-                title: "Deletion failed",
+                title: "Удаление не выполнено",
                 description: error.message,
                 variant: "destructive",
               });
@@ -295,8 +295,8 @@ export function useCreateTaskMutation() {
             onSuccess: () => {
               queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
               toast({
-                title: "User deleted",
-                description: "The user has been successfully deleted.",
+                title: "Операция выполнена",
+                description: "Пользователь успешно удален",
               });
              onSuccessCallback?.();
             },
@@ -320,17 +320,71 @@ export function useCreateTaskMutation() {
           onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
             toast({
-              title: "User updated",
-              description: "The user has been successfully updated.",
+              title: "Операция выполнена",
+              description: "Пользователь успешно обновлен",
             });
             onSuccessCallback?.();
           },
           onError: (error: Error) => {
             toast({
-              title: "Update failed",
+              title: "Обновление не выполнено",
               description: error.message,
               variant: "destructive",
             });
           },
         });
       }
+        export function useAssignMutation() {
+          const {toast} = useToast();
+          return useMutation({
+            mutationFn: async (data: Partial<AssingedTask>) => {
+              const res = await apiRequest("POST", `/api/assignedTasks`, data);
+              
+              return await res.json();
+            },
+          
+            onError: (error: Error) => {
+              toast({
+                title: "Назначение не выполнено",
+                description: error.message,
+                variant: "destructive",
+              });
+            },
+          });
+        }
+
+
+        export function useUpdateAssignedTaskMutation() {
+          const {toast} = useToast();
+          return useMutation({
+            mutationFn: async (data: Partial<AssingedTask>) => {
+              const res = await apiRequest("PUT", `/api/assignedTasks/${data.id}`, data);
+              return await res.json();
+            },
+           
+            onError: (error: Error) => {
+              toast({
+                title: "Обновление не выполнено",
+                description: error.message,
+                variant: "destructive",
+              });
+            },
+          });
+        }
+
+              export function useDeleteAssignedTaskMutation() {
+        const {toast} = useToast();
+        return useMutation({
+            mutationFn: async (id: number) => {
+              await apiRequest("DELETE", `/api/assignedTasks/${id}`);
+            },
+         
+            onError: (error: Error) => {
+              toast({
+                title: "Операция не выполнена",
+                description: error.message,
+                variant: "destructive",
+              });
+            },
+          });
+        }

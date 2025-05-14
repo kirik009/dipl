@@ -6,6 +6,7 @@ import { Exercise, ExerciseProgress, Task, TaskProgress } from "@shared/schema";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { navigate } from "wouter/use-browser-location";
 import { useEffect, useState } from "react";
+import { Console } from "console";
 
 export default function TaskResults() {
   
@@ -32,36 +33,26 @@ export default function TaskResults() {
   });
 
   const { data: exerciseProgs, isLoading: exerciseProgsLoading, error: exerciseProgsError } =
-    useQuery<ExerciseProgress[]>({
+    useQuery<({correctSentence: string | null} & ExerciseProgress)[]>({
       queryKey: [`/api/task_exercises_prog/${progressId}`],
       queryFn: async () => {
         const response = await fetch(`/api/task_exercises_prog/${progressId}`);
         if (!response.ok) throw new Error("Failed to fetch exercises progress");
         return response.json();
       },
-      
     });
 
-  const { data: exercises, isLoading: exercisesLoading, error: exercisesError } = useQuery<Exercise[]>({
-    queryKey: [`/api/task_exercises/${taskId}`],
-    queryFn: async () => {
-      const response = await fetch(`/api/task_exercises/${taskId}`);
-      if (!response.ok) throw new Error("Failed to fetch exercises");
-      return response.json();
-    },
-    
-  });
+
 
 
   const isLoading =
-  progLoading ||
-  taskLoading ||
-  exerciseProgsLoading ||
-  exercisesLoading;
-  if (!prog || !task ||  !exercises) {
+  progLoading &&
+  taskLoading &&
+  exerciseProgsLoading;
+  if (!prog || !task   ) {
     return null; // или loader
   }
-  const error = progError || taskError || exerciseProgsError || exercisesError;
+  const error = progError || taskError || exerciseProgsError;
 
   if (isLoading) {
    
@@ -125,10 +116,10 @@ export default function TaskResults() {
                 </div>
                 <div className="bg-green-300 p-4 rounded flex-1">
                   <p>
-                    <strong>Слова:</strong> {exercises[index].words.join(" ")}
+                    <strong>Ваш ответ:</strong> {exProg.userAnswer}
                   </p>
                   <p>
-                    <strong>Правильный ответ:</strong> {exercises[index].correctSentence}
+                    <strong>Правильный ответ:</strong> {exProg.correctSentence}
                   </p>
                 </div>
               </div>
