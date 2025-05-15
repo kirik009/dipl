@@ -7,19 +7,16 @@ import { useAuth } from "@/hooks/use-auth";
 import { Redirect } from "wouter";
 import TaskManagement from "./task-management";
 import TaskEditor from "./task-editor";
-import GrammarManagement from "./grammar-management";
 
 export default function AdminDashboard() {
   const [location] = useLocation();
   const { user } = useAuth();
 
   // Determine which tab should be active based on the URL
-  let initialTab = user?.role === "admin" ? "users" : "tasks";
+  let initialTab = "users";
   
   if (location.startsWith("/admin/tasks")) {
     initialTab = "tasks";
-  } else if (location.startsWith("/admin/grammar")) {
-    initialTab = "grammar";
   }
   
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -61,19 +58,12 @@ else {
             Упражнения
           </a>
         </Link>
-        <Link href="/admin/grammar">
-          <a className={`py-4 px-4 font-medium ${activeTab === 'grammar' ? 'text-primary border-b-2 border-primary' : 'text-gray-600'}`}
-             onClick={() => setActiveTab('grammar')}>
-            Грамматические темы
-          </a>
-        </Link>
       </div>
       
       {/* Tab Content */}
       <div className="p-6">
         {activeTab === 'users' && <UserManagement />}
         {activeTab === 'tasks' && <TaskManagement />}
-        {activeTab === 'grammar' && <GrammarManagement/>}
       </div>
     </>
   )

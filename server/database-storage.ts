@@ -8,7 +8,6 @@ import * as exercisesOps from "./database-storage/exercises";
 import * as exerciseProgressOps from "./database-storage/exerciseProgress";
 import * as taskProgressOps from "./database-storage/taskProgress";
 import * as tasksOps from "./database-storage/tasks";
-import * as grammarTopicsOps from "./database-storage/grammar-topics";
 import { AssingedTask, TaskProgress } from "@shared/schema";
 export class DatabaseStorage implements IStorage {
   sessionStore: session.Store;
@@ -79,17 +78,6 @@ getTaskProgress = taskProgressOps.getTaskProgress;
 
 getLatestTask = tasksOps.getLatestTask;
 
-
-
-getGrammarTopics = grammarTopicsOps.getGrammarTopics;
-
-getGrammarTopic = grammarTopicsOps.getGrammarTopic;
-
-createGrammarTopic = grammarTopicsOps.createGrammarTopic;
-
-deleteGrammarTopic = grammarTopicsOps.deleteGrammarTopic;
-
-updateGrammarTopic = grammarTopicsOps.updateGrammarTopic;
 
 }
 

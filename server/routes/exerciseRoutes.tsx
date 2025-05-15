@@ -8,9 +8,8 @@ export async function exerciseRoutes(app: Express) {
 // Exercise routes
   app.get("/api/exercises", async (req, res, next) => {
     try {
-      let grammarTopic_id = Number(req.query.grammarTopic_id);
-      
-      const exercises = await storage.getExercises(grammarTopic_id);
+     
+      const exercises = await storage.getExercises();
       res.json(exercises);
     } catch (error) {
       next(error);
@@ -270,46 +269,4 @@ export async function exerciseRoutes(app: Express) {
               next(error);
             }
           });
-  
-
-  //     app.post("/api/exercises/submit", async (req, res, next) => {
-  //   try {
-  //     if (!req.isAuthenticated()) {
-  //       return res.status(401).json({ message: "Not authenticated" });
-  //     }
-      
-  //     const validatedData = submitExerciseSchema.parse(req.body);
-      
-  //     const exercise = await storage.getExercise(validatedData.exerciseId);
-  //     if (!exercise) {
-  //       return res.status(404).json({ message: "Exercise not found" });
-  //     }
-      
-  //     // Check if answer is correct (normalized: lowercase, no punctuation, trimmed)
-  //     const normalizedCorrect = exercise.correctSentence.toLowerCase().replace(/[^\w\s]/g, '').trim();
-  //     const normalizedAnswer = validatedData.userAnswer.toLowerCase().replace(/[^\w\s]/g, '').trim();
-  //     const isCorrect = normalizedCorrect === normalizedAnswer;
-  //     const exerciseProgress = await storage.createExerciseProgress({
-  //       userId: req.user.id,
-  //       exerciseId: validatedData.exerciseId,
-  //       isCorrect,
-  //       userAnswer: validatedData.userAnswer,
-  //       taskProgressId: validatedData.taskProgressId,
-  //     });
-
-  //     res.status(201).json({
-  //       ...exerciseProgress,
-  //       exercise,
-  //       isCorrect,
-  //     });
-  //   } catch (error) {
-  //     if (error instanceof z.ZodError) {
-  //       return res.status(400).json({ 
-  //         message: "Validation error", 
-  //         errors: error.errors 
-  //       });
-  //     }
-  //     next(error);
-  //   }
-  // });
 }

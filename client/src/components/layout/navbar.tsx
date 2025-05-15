@@ -17,7 +17,7 @@ export function Navbar() {
     logoutMutation.mutate();
   };
     const { data: assignedTasks, isLoading: assignedLoading, error: assignedError } = useQuery<(AssingedTask& { taskName: string | null }  & {authorName: string | null })[]>({
-    queryKey: [`/api/assignedTasks/${user?.id}`],
+    queryKey: [`/api/assignedTasks/${Number(user?.id || 0)}`],
   });
   const menuItems = [
     { href: "/", label: "Главная" },

@@ -72,8 +72,8 @@ export default function ProfilePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
-        title: "Profile updated",
-        description: "Your profile has been successfully updated.",
+        title: "Операция выполнена",
+        description: "Ваш пароль изменен.",
       });
       
       // Clear password fields
@@ -83,7 +83,7 @@ export default function ProfilePage() {
     },
     onError: (error: Error) => {
       toast({
-        title: "Update failed",
+        title: "Обновление не выполнено",
         description: error.message,
         variant: "destructive",
       });
@@ -99,7 +99,7 @@ export default function ProfilePage() {
       <>
         <Navbar />
         <div className="container mx-auto pt-20 pb-12 px-4 min-h-screen flex items-center justify-center">
-          <p>Please log in to view your profile.</p>
+          <p>Пожалуйста войдите, чтобы увидеть эту страницу.</p>
         </div>
       </>
     );

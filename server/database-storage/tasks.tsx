@@ -36,6 +36,7 @@ import { db } from "server/db";
 
 export async function createTask(task: InsertTask): Promise<Task> {
     try {
+            
       const [newTask] = await db
         .insert(tasks)
         .values(task)

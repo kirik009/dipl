@@ -225,14 +225,8 @@ if (taskProg?.isActive && nextExercise) {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-600">
-  Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
-  <span className="font-medium">
-    {Math.min(currentPage * itemsPerPage, currentTasks.length)}
-  </span>{" "}
-  of <span className="font-medium">{currentTasks.length}</span> results
-</p>  
+        <div className="mt-6 flex items-center justify-end">
+         
           <div className="flex space-x-1">
             <Button
               variant="outline"
@@ -240,7 +234,7 @@ if (taskProg?.isActive && nextExercise) {
               onClick={() => setCurrentPage(currentPage - 1)}
               disabled={currentPage === 1}
             >
-              Previous
+              Назад
             </Button>
             {Array.from({ length: Math.min(totalPages, 3) }, (_, i) => {
               const pageNumber = currentPage > 2 && totalPages > 3 ? currentPage - 1 + i : i + 1;
@@ -275,7 +269,7 @@ if (taskProg?.isActive && nextExercise) {
               onClick={() => setCurrentPage(currentPage + 1)}
               disabled={currentPage === totalPages}
             >
-              Next
+              Дальше
             </Button>
           </div>
         </div>

@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Exercise, Task } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link, useLocation } from "wouter";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -169,14 +167,8 @@ export default function TaskManagement() {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-between">
-          <p className="text-sm text-gray-600">
-            Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
-            <span className="font-medium">
-              {tasks && Math.min(currentPage * itemsPerPage, tasks.length)}
-            </span>{" "}
-            of <span className="font-medium">{tasks && tasks.length}</span> results
-          </p>
+        <div className="mt-6 flex items-center justify-end">
+          
           <div className="flex space-x-1">
             <Button
               variant="outline"
@@ -184,7 +176,7 @@ export default function TaskManagement() {
               onClick={() => setCurrentPage(currentPage - 1)}
               disabled={currentPage === 1}
             >
-              Previous
+              Назад
             </Button>
             {Array.from({ length: Math.min(totalPages, 3) }, (_, i) => {
               const pageNumber = currentPage > 2 && totalPages > 3 ? currentPage - 1 + i : i + 1;
@@ -219,7 +211,7 @@ export default function TaskManagement() {
               onClick={() => setCurrentPage(currentPage + 1)}
               disabled={currentPage === totalPages}
             >
-              Next
+              Дальше
             </Button>
           </div>
         </div>

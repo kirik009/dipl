@@ -1,23 +1,22 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Exercise, insertExerciseSchema, insertTaskSchema, Task } from "@shared/schema";
-import { toast, useToast } from "@/hooks/use-toast";
+import { Exercise, insertTaskSchema, Task } from "@shared/schema";
+import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { X, Plus, Loader2, ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { Loader2, ArrowLeft, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import {
   AlertDialog,
@@ -42,23 +41,26 @@ export default function TaskEditor() {
   const timeInputRef = useRef<HTMLInputElement | null>(null);
 
 
-  const { data: exercises, isLoading: isLoadingExercise, error } = isEditing ? useQuery<(Exercise & { topicName: string | null })[]>({
+  const { data: exercises, isLoading: isLoadingExercise, error } = isEditing ? useQuery<(Exercise)[]>({
     queryKey: [`/api/task_exercises/${id}`],
     enabled: isEditing,
   }) : 
-  useQuery<(Exercise & { topicName: string | null })[]>({
+  useQuery<Exercise[]>({
     queryKey: [`/api/new_task_exercises`]
   });
  
-  const { data: task} = useQuery<Task>({
+  const { data: task, isLoading: isLoadingTask, error: taskError } = useQuery<Task>({
     queryKey: [`/api/tasks/${id}`],
     enabled: isEditing,
   });
 
-  const { data: newTask} = useQuery<Task>({
+  const { data: newTask, isLoading: isLoadingNewTask, error: newTaskError } = useQuery<Task>({
     queryKey: [`/api/NewTask`]
   });
-  
+
+  const { data: allTasks, isLoading: tasksLoading, error: tasksError } = useQuery<Task[]>({
+  queryKey: ["/api/tasks"],
+});
   // Form definition
   const form = useForm<FormValues>({
     resolver: zodResolver(insertTaskSchema),
@@ -79,6 +81,27 @@ export default function TaskEditor() {
       });
     }
   }, [task, form]);
+
+  useEffect(() => {
+  const subscription = form.watch((values) => {
+    localStorage.setItem(`taskForm-${id ?? "new"}`, JSON.stringify(values));
+  });
+  return () => subscription.unsubscribe();
+}, [form, id]);
+
+useEffect(() => {
+  const saved = localStorage.getItem(`taskForm-${id ?? "new"}`);
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      form.reset(parsed);
+    } catch (err) {
+      console.error("Не удалось восстановить сохранённые данные формы", err);
+    }
+  } else if (task) {
+    form.reset(task); 
+  }
+}, [task, form, id]);
   
     const updateExercisesMutation = useUpdateExercisesMutation(newTask, id, isEditing)
 
@@ -103,6 +126,10 @@ export default function TaskEditor() {
       };
   // Handle form submission
 const onSubmit = (values: FormValues) => {
+  if (allTasks?.some(task => task.name.trim().toLowerCase() === values.name.trim().toLowerCase() && task.id !== Number(id))) {
+  form.setError("name", { message: "Задание с таким названием уже существует" });
+  return;
+}
   if (!values.name.trim()) {
     form.setError("name", { message: "Название обязательно" });
     return;
@@ -116,7 +143,7 @@ const onSubmit = (values: FormValues) => {
     });
     return;
   }
-
+localStorage.removeItem(`taskForm-${id ?? "new"}`);
   const taskData = {
     ...values,
     exercisesNumber: exercises.length,
@@ -129,6 +156,7 @@ const onSubmit = (values: FormValues) => {
   }
 
   updateExercisesMutation.mutate();
+  window.history.back();
 };
 
   
@@ -180,7 +208,7 @@ const onSubmit = (values: FormValues) => {
       }, 0);
     }
   };
-  if (isLoading) {
+  if (isLoading || isLoadingExercise || isLoadingNewTask || tasksLoading) {
     return (
       <div className="flex justify-center items-center py-12">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />
@@ -268,7 +296,7 @@ const onSubmit = (values: FormValues) => {
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">№</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Перевод</th>
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Предложение</th>
-              <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Темы</th>
+        
               <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Действия</th>
             </tr>
           </thead>
@@ -282,7 +310,7 @@ const onSubmit = (values: FormValues) => {
                 <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
                   {exercise.correctSentence}
                 </td>
-                <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">{exercise.topicName}</td>
+                
                 <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">
                   <Button
                     variant="ghost"

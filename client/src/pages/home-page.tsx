@@ -8,7 +8,6 @@ import {
   Layers, 
   MessageSquare, 
   Languages, 
-  Smartphone,
   Info
 } from "lucide-react";
 

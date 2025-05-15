@@ -13,18 +13,18 @@ import { GraduationCap } from "lucide-react";
 
 // Login form schema
 const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
+  username: z.string().min(1, "Никнейм необходим"),
+  password: z.string().min(1, "Пароль необходим"),
 });
 
 // Register form schema
 const registerSchema = z.object({
-  fullName: z.string().min(2, "Full name must be at least 2 characters"),
-  username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(1, "Please confirm your password"),
+  fullName: z.string().min(2, "Полное имя должно содержать не менее двух букв"),
+  username: z.string().min(3, "Никнем должен содержать не менее трех букв"),
+  password: z.string().min(6, "Пароль должен содержать не менее 6 букв"),
+  confirmPassword: z.string().min(1, "Пожалуйста введите ваш пароль"),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords do not match",
+  message: "Пароли не совпадают",
   path: ["confirmPassword"],
 });
 

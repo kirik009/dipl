@@ -19,7 +19,6 @@ export const users = pgTable("users", {
 
 export const exercises = pgTable("exercises", {
   id: serial("id").primaryKey(),
-  grammarTopic_id: integer("grammar_topic_id").references(() => grammarTopics.id),
   translation: text("translation").notNull(),
   correctSentence: text("correct_sentence").notNull(),
   words: text("words").array().notNull(),
@@ -49,11 +48,6 @@ export const exerciseProgress = pgTable("exercise_progress", {
   taskProgressId: integer("task_progress_id").references(() => taskProgress.id).notNull(),
 });
 
-export const grammarTopics = pgTable("grammar_topics", {
-  id: serial("id").primaryKey(),
-  name: text("name").default(""),
-  description: text("description").default(""),
-});
 
 
 export const tasks = pgTable("tasks", {
@@ -86,7 +80,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export const insertExerciseSchema = createInsertSchema(exercises).pick({
   translation: true,
-  grammarTopic_id: true,
   correctSentence: true,
   words: true,
   grammarExplanation: true,
@@ -137,10 +130,6 @@ export const insertTaskProgressSchema = createInsertSchema(taskProgress).pick({
   isActive: true,
 });
 
-export const insertGrammarTopicSchema = createInsertSchema(grammarTopics).pick({
-  name: true,
-  description: true,
-});
 
 // Zod enhanced schemas
 export const registerUserSchema = insertUserSchema
@@ -180,17 +169,8 @@ export type ExerciseProgress = typeof exerciseProgress.$inferSelect;
 export type InsertExerciseProgress = z.infer<typeof insertExerciseProgressSchema>;
 export type UpdateExerciseProgress = z.infer<typeof updateExerciseProgressSchema>;
 
-export type GrammarTopic = typeof grammarTopics.$inferSelect;
-export type InsertGrammarTopic = z.infer<typeof insertGrammarTopicSchema>;
-
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
 
 export type TaskProgress = typeof taskProgress.$inferSelect;
 export type InsertTaskProgress = z.infer<typeof insertTaskProgressSchema>;
-
-export enum Difficulty {
-  BEGINNER = "beginner",
-  INTERMEDIATE = "intermediate",
-  ADVANCED = "advanced",
-}

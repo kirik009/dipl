@@ -30,14 +30,14 @@
   import { useAssignMutation, useCreateUserMutation, useDeleteAssignedTaskMutation, useDeleteUserMutation,  useUpdateAssignedTaskMutation,  useUpdateUserMutation } from "@/hooks/use-mutate";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
-import { on } from "events";
-import { Value } from "@radix-ui/react-select";
-import { z } from "zod";
+
 
   type UserWithoutPassword = Omit<User, 'password'>;
 
   export default function UserManagement() {
      const { user } = useAuth();
+     const [searchTerm, setSearchTerm] = useState("");
+     
     const [searchQuery, setSearchQuery] = useState("");
 
     const [roleFilter, setRoleFilter] = useState("user");
@@ -66,13 +66,13 @@ import { z } from "zod";
 
   const { data: assignedSolvedTasks, isLoading: assignedSolvedLoading } = useQuery<(AssingedTask & { taskName: string | null } & {authorName: string | null })[]>(
   {
-    queryKey: [`/api/assignedSolvedTasks/${userToAddTask?.id}`],
+    queryKey: [`/api/assignedSolvedTasks/${Number(userToAddTask?.id || 0)}`],
  
   }
 );
   const { data: assignedExpiredTasks, isLoading: assignedExpiredLoading } = useQuery<(AssingedTask & { taskName: string | null } & {authorName: string | null })[]>(
   {
-    queryKey: [`/api/assignedExpiredTasks/${userToAddTask?.id}`],
+    queryKey: [`/api/assignedExpiredTasks/${Number(userToAddTask?.id || 0)}`],
  
   }
 );
@@ -355,30 +355,30 @@ const handleCreateUser = (e: React.FormEvent) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {paginatedUsers.map((user) => (
-                <tr key={user.id}>
+              {paginatedUsers.map((userr) => (
+                <tr key={userr.id}>
                   <td className="py-4 px-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-500 font-medium">
-                        {getInitials(user.fullName)}
+                        {getInitials(userr.fullName)}
                       </div>
                       <div className="ml-3">
-                        <p className="text-sm font-medium text-gray-900">{user.fullName}</p>
+                        <p className="text-sm font-medium text-gray-900">{userr.fullName}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">{user.username}</td>
+                  <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">{userr.username}</td>
                   <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">
                     <span
                       className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        user.role === "admin"
+                        userr.role === "admin"
                           ? "bg-red-100 text-red-800"
-                          : user.role === "teacher"
+                          : userr.role === "teacher"
                           ? "bg-purple-100 text-purple-800"
                           : "bg-blue-100 text-blue-800"
                       }`}
                     >
-                      {user.role === "user" ? "Студент" : user.role === "teacher" ? "Преподаватель" : "Администратор"}
+                      {userr.role === "user" ? "Студент" : userr.role === "teacher" ? "Преподаватель" : "Администратор"}
                     </span>
                   </td>
       
@@ -389,17 +389,17 @@ const handleCreateUser = (e: React.FormEvent) => {
                       
                       onClick={() => {
                         
-                        handleEditUser(user)}}
+                        handleEditUser(userr)}}
                       
                       className="text-primary hover:text-primary-600 mr-2"
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    {user.role === "admin" && 
+                    {user?.role === "admin" && 
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDeleteUser(user)}
+                      onClick={() => handleDeleteUser(userr)}
                       className="text-red-500 hover:text-red-600"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -414,22 +414,16 @@ const handleCreateUser = (e: React.FormEvent) => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="mt-6 flex items-center justify-between">
-            <p className="text-sm text-gray-600">
-              Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to{" "}
-              <span className="font-medium">
-                {Math.min(currentPage * itemsPerPage, filteredUsers.length)}
-              </span>{" "}
-              of <span className="font-medium">{filteredUsers.length}</span> results
-            </p>
-            <div className="flex space-x-1">
+          <div className="mt-6 flex items-center justify-end">
+           
+            <div className="flex space-x-1 items-center justify-between">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setCurrentPage(currentPage - 1)}
                 disabled={currentPage === 1}
               >
-                Previous
+                Назад
               </Button>
               {Array.from({ length: Math.min(totalPages, 3) }, (_, i) => {
                 const pageNumber = currentPage > 2 && totalPages > 3 ? currentPage - 1 + i : i + 1;
@@ -464,7 +458,7 @@ const handleCreateUser = (e: React.FormEvent) => {
                 onClick={() => setCurrentPage(currentPage + 1)}
                 disabled={currentPage === totalPages}
               >
-                Next
+                Дальше
               </Button>
             </div>
           </div>
@@ -576,6 +570,7 @@ const handleCreateUser = (e: React.FormEvent) => {
          { userToAddTask &&  (
        
   <form onSubmit={handleAssign} className="space-y-4 py-4">
+   
     <div className="grid grid-cols-1 gap-4">
 
       {/* Информация о пользователе */}
@@ -587,13 +582,22 @@ const handleCreateUser = (e: React.FormEvent) => {
         <label className="text-sm font-medium">Никнейм</label>
         <p className="text-sm">{userToAddTask.username}</p>
       </div>
-
+ <div className="space-y-2">
+  <label className="text-sm font-medium">Поиск заданий</label>
+  <Input
+    type="text"
+    placeholder="Введите название задания"
+    value={searchTerm}
+    onChange={(e) => setSearchTerm(e.target.value)}
+  />
+</div>
      {assignedTasks && assignedTasks.length > 0 && (
        
      
         <div className="space-y-2">
           <h3 className="font-semibold">Назначенные задания</h3>
-          {assignedTasks?.map((task) => {
+          {assignedTasks?.filter(task => (task.taskName?.toLowerCase().includes(searchTerm.toLowerCase() )))
+          .map((task) => {
              const selected = selectedExercisesToDelete.find(e => e.id === task.id);
             return (
             <>
@@ -618,15 +622,7 @@ const handleCreateUser = (e: React.FormEvent) => {
   )}
 />
               </div>
-              <div>
-                <label className="text-sm block mb-1">Срок сдачи:</label>
-                <Input
-                  type="datetime-local"
-                  min={getLocalDateTimeForMin()}
-                  value={task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : ""}
-                  onChange={(e) => handleUpdateAssignedTask(task.id, {dueDate: new Date(e.target.value)})}
-                />
-              </div>
+             
             </div>
             </>
           )
@@ -641,7 +637,8 @@ const handleCreateUser = (e: React.FormEvent) => {
      
         <div className="space-y-2">
           <h3 className="font-semibold">Просроченные задания</h3>
-          {assignedExpiredTasks?.map((task) => {
+          {assignedExpiredTasks?.filter(task => (task.taskName?.toLowerCase().includes(searchTerm.toLowerCase() )))
+          .map((task) => {
              const selected = selectedExercisesToDelete.find(e => e.id === task.id);
             return (
             <>
@@ -666,15 +663,7 @@ const handleCreateUser = (e: React.FormEvent) => {
   )}
 />
               </div>
-              <div>
-                <label className="text-sm block mb-1">Срок сдачи:</label>
-                <Input
-                  type="datetime-local"
-                  min={getLocalDateTimeForMin()}
-                  value={task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : ""}
-                  onChange={(e) => handleUpdateAssignedTask(task.id, {dueDate: new Date(e.target.value)})}
-                />
-              </div>
+             
             </div>
             </>
           )
@@ -690,7 +679,8 @@ const handleCreateUser = (e: React.FormEvent) => {
      
         <div className="space-y-2">
           <h3 className="font-semibold">Решенные задания</h3>
-          {assignedSolvedTasks?.map((task) => {
+          {assignedSolvedTasks?.filter(task => (task.taskName?.toLowerCase().includes(searchTerm.toLowerCase() )))
+          .map((task) => {
              const selected = selectedExercisesToDelete.find(e => e.id === task.id);
             return (
             <>
@@ -715,15 +705,7 @@ const handleCreateUser = (e: React.FormEvent) => {
   )}
 />
               </div>
-              <div>
-                <label className="text-sm block mb-1">Срок сдачи:</label>
-                <Input
-                  type="datetime-local"
-                  min={getLocalDateTimeForMin()}
-                  value={task.dueDate ? new Date(task.dueDate).toISOString().slice(0, 16) : ""}
-                  onChange={(e) => handleUpdateAssignedTask(task.id, {dueDate: new Date(e.target.value)})}
-                />
-              </div>
+             
                <div>
                 <label className="text-sm block mb-1">Результаты:</label> 
                    <div className="flex flex-col gap-4 mt-2">
@@ -764,6 +746,7 @@ const handleCreateUser = (e: React.FormEvent) => {
   ?.filter(task => !assignedTasks?.some(assigned => assigned.taskId === task.id))
   .filter(task => !assignedSolvedTasks?.some(assigned => assigned.taskId === task.id))
 .filter(task => !assignedExpiredTasks?.some(assigned => assigned.taskId === task.id))
+.filter(task => task.name.toLowerCase().includes(searchTerm.toLowerCase()))
   .map(task => {
     const selected = selectedExercises.find(e => e.exerciseId === task.id);
     return (

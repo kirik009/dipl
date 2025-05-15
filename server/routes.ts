@@ -6,7 +6,7 @@ import { insertExerciseSchema,  submitExerciseSchema, insertTaskSchema, insertTa
 import { z } from "zod";
 import { taskRoutes } from "./routes/taskRoutes";
 import { exerciseRoutes } from "./routes/exerciseRoutes";
-import { grammarRoutes } from "./routes/grammarRoutes";
+
 import { assignTasksRoutes } from "./routes/assignTasksRoutes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -15,7 +15,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
      
   taskRoutes(app);
   exerciseRoutes(app);
-  grammarRoutes(app);
   assignTasksRoutes(app);
 
   // Admin user management routes
@@ -59,6 +58,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (username !== undefined) userUpdate.username = username;
       if (role !== undefined) userUpdate.role = role;
       if (password !== undefined) userUpdate.password = password; // Внутри storage будет захеширован
+  
+      const updatedUser = await storage.updateUser(id, userUpdate);
+  
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found or update failed" });
+      }
+  
+      // Убираем пароль перед отправкой
+      const { password: _, ...userWithoutPassword } = updatedUser;
+  
+      res.json(userWithoutPassword);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.patch("/api/user/:id", async (req, res, next) => {
+    try {
+      // Проверка авторизации 
+      if (!req.isAuthenticated()) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+  
+      const id = Number(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+  
+      const { fullName, username, role, newPassword } = req.body;
+      // Формируем объект обновления
+      const userUpdate: Partial<User> = {};
+      if (fullName !== undefined) userUpdate.fullName = fullName;
+      if (username !== undefined) userUpdate.username = username;
+      if (role !== undefined) userUpdate.role = role;
+      if (newPassword !== undefined) userUpdate.password = newPassword; // Внутри storage будет захеширован
   
       const updatedUser = await storage.updateUser(id, userUpdate);
   

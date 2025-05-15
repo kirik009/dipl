@@ -10,9 +10,8 @@ import  WordBank  from "@/components/ui/dnd/word-bank";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Exercise, Task, TaskProgress, taskProgress, insertTaskProgressSchema, ExerciseProgress } from "@shared/schema";
-import { Loader2, RefreshCw, SkipForward } from "lucide-react";
-import { ConsoleLogWriter } from "drizzle-orm";
+import { Exercise, TaskProgress,insertTaskProgressSchema, ExerciseProgress } from "@shared/schema";
+import { Loader2, RefreshCw } from "lucide-react";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 export default function ExercisePage() {

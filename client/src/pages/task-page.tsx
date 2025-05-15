@@ -1,16 +1,12 @@
-import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { AssingedTask, Exercise, Task, TaskProgress } from "@shared/schema";
+import { Exercise, Task, TaskProgress } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { toast, useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Link, useLocation, useParams } from "wouter";
+import { toast } from "@/hooks/use-toast";
+import { useLocation, useParams } from "wouter";
 import { Navbar } from "@/components/layout/navbar";
+import { Loader2 } from "lucide-react";
 
-
-import { Loader2, Pencil, Trash2, Search, FilePlus } from "lucide-react";
 export default function TaskPage() {
   const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
@@ -139,21 +135,45 @@ export default function TaskPage() {
   }
  
   return (
-    <>
-                <Navbar />
-    <div className="mt-16">
-      <div className="flex flex-col items-center mb-6">
-        <p className=" mx-auto w-fit">{task?.name}</p>
-        <p className="mx-auto w-fit">Количество попыток: {task?.triesNumber ? task.triesNumber : "не ограничено"}</p>
-        <p className=" mx-auto w-fit">Ограничение по времени: {task?.timeConstraint !== "00:00:00" ? task?.timeConstraint : "не ограничено"}</p>
-        <button  className="h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90"
-              
-                onClick={handleSubmit}
-                >             
-                    Начать тест
-                </button>
-      </div>     
+<>
+  <Navbar />
+  <div className="mt-16">
+    <div className="flex flex-col items-center mb-6">
+      <p className="mx-auto w-fit">{task?.name}</p>
+      <p className="mx-auto w-fit">
+        Количество попыток: {task?.triesNumber ?? "не ограничено"}
+      </p>
+      <p className="mx-auto w-fit">
+        Ограничение по времени: {task?.timeConstraint !== "00:00:00" ? task?.timeConstraint : "не ограничено"}
+      </p>
+
+      {/* Статистика по попыткам */}
+      {taskProgs && taskProgs.length > 0 ? (
+        <div className="mt-6 w-full max-w-md bg-gray-50 p-4 rounded-md shadow-sm">
+          <h3 className="text-lg font-semibold mb-2">Ваши попытки:</h3>
+          <ul className="space-y-2">
+            {taskProgs.map((prog, index) => (
+              <li key={prog.id} className="border-b pb-2 text-sm text-gray-700">
+                Попытка {index + 1}: {prog.correctAnswers ?? 0} правильных ответов {"из " + (Number(task?.exercisesNumber) !== 0 ? String(task?.exercisesNumber) +"  вопросов" : "")}{" "}
+                
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500 mt-4">У вас пока нет попыток.</p>
+      )}
+
+      {/* Кнопка начать */}
+      <button
+        className="mt-6 h-10 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
+        onClick={handleSubmit}
+      >
+        Начать тест
+      </button>
     </div>
-    </>
+  </div>
+</>
+
   );
 }

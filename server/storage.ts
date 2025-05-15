@@ -1,7 +1,6 @@
 import {type User, type InsertUser, 
   type Exercise, type InsertExercise, 
   type ExerciseProgress, type InsertExerciseProgress, 
-  type GrammarTopic, type InsertGrammarTopic, 
   Task,
   InsertTask,
   InsertTaskProgress,
@@ -22,14 +21,14 @@ getAllUsers(): Promise<User[]>;
 deleteUser(id: number): Promise<void>;
 // Exercise methods
 getExercise(id: number): Promise<Exercise | undefined>;
-getExercises(grammarTopic_id?: number): Promise<Exercise[]>;
+getExercises(): Promise<Exercise[]>;
 createExercise(exercise: InsertExercise): Promise<Exercise>;
 updateExercise(id: number, exercise: Partial<InsertExercise>): Promise<Exercise | undefined>;
 deleteExercise(id: number): Promise<void>;
 deleteExercises(): Promise<void>;
 getTaskExercise(task_id?: number, seq?: number): Promise<Exercise>;
 
-getTaskExercises(task_id?: number): Promise<(Exercise & { topicName: string | null })[]>;
+getTaskExercises(task_id?: number): Promise<(Exercise)[]>;
 getNewTaskExercises(): Promise<Exercise[]>;
 assignTaskIdToUnassignedExercises(task_id?: number): Promise<number>
 // Task methods
@@ -57,13 +56,6 @@ getLastTaskProgress( userId: number): Promise<TaskProgress>
 getUserTaskProgress( userId: number, taskId: number): Promise<TaskProgress[]>
 
 createTaskProgress(progress: InsertTaskProgress): Promise<TaskProgress>;
-
-// Grammar topic methods
-getGrammarTopics(): Promise<GrammarTopic[]>;
-getGrammarTopic(id: number): Promise<GrammarTopic | undefined>;
-deleteGrammarTopic(id: number): Promise<void>;
-createGrammarTopic(): Promise<GrammarTopic>;
-updateGrammarTopic(id: number, topic: Partial<InsertGrammarTopic>): Promise<GrammarTopic | undefined>;
 
 
 getAssignedTasks(userId: number): Promise<(AssingedTask & { taskName: string | null } & {authorName: string | null })[]>

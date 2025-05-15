@@ -51,6 +51,7 @@ import * as crypto from "crypto";
   
       export async function updateUser(id: number, userUpdate: Partial<InsertUser>): Promise<User | undefined> {
           try {
+            
             // Hash password if it's included in the update
             if (userUpdate.password) {
               userUpdate.password = hashPassword(userUpdate.password);

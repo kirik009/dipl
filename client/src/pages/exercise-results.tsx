@@ -2,7 +2,7 @@ import { useParams, useLocation, Link as WouterLink } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
-import { Exercise, insertTaskProgressSchema, Task, TaskProgress } from "@shared/schema";
+import { Exercise, insertTaskProgressSchema, Task, } from "@shared/schema";
 import { CheckCircle, XCircle } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { navigate } from "wouter/use-browser-location";

@@ -4,7 +4,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Exercise, grammarTopics, insertExerciseSchema } from "@shared/schema";
+import { Exercise, insertExerciseSchema } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -72,7 +72,6 @@ export default function ExerciseEditor() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      grammarTopic_id: 0,
       translation: "",
       correctSentence: "",
       words: [],
@@ -202,7 +201,7 @@ export default function ExerciseEditor() {
   return (
     <div>
       <div className="bg-gray-100 px-6 py-4 flex items-center border-b border-gray-200">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/admin/exercises")} className="mr-4">
+        <Button variant="ghost" size="sm" onClick={() => window.history.back()} className="mr-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Назад
         </Button>
@@ -214,40 +213,7 @@ export default function ExerciseEditor() {
       <div className="p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-1 gap-6 mb-6">
-             
-            
-              
-              <FormField
-  control={form.control}
-  name="grammarTopic_id"
-  render={({ field }) => (
-    <FormItem>
-      <FormLabel>Тема</FormLabel>
-      <Select
-        onValueChange={(value) => field.onChange(Number(value))}
-        defaultValue={field.value ? String(field.value) : undefined}
-      >
-        <FormControl>
-          <SelectTrigger>
-            <SelectValue placeholder="Select grammar topic" />
-          </SelectTrigger>
-        </FormControl>
-        <SelectContent>
-          {grammarTopics?.map((topic: any) => (
-            <SelectItem key={topic.id} value={String(topic.id)}>
-              {topic.name}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <FormMessage />
-    </FormItem>
-  )}
-/>
-              
-            </div>
-            
+           
 
             <div className="mb-4">
               <FormLabel>Можно задать перевод файлом (.pdf, .docx, .txt)</FormLabel>
@@ -336,7 +302,7 @@ export default function ExerciseEditor() {
                   <FormControl>
                     <Textarea 
                       {...field} 
-                      placeholder="Дополните упражнение пояснением, которое будет предоставлено после предоставления ответаы"
+                      placeholder="Дополните упражнение пояснением, которое будет предоставлено после предоставления ответа"
                       rows={4}
                       value= {field.value ?? ""} 
                     />

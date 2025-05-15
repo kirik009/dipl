@@ -4,7 +4,7 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { AssingedTask, insertExerciseSchema, InsertGrammarTopic, insertTaskSchema, InsertUser, LoginUserInput, RegisterUserInput, Task, User } from "@shared/schema";
+import { AssingedTask, insertExerciseSchema, insertTaskSchema, InsertUser, LoginUserInput, RegisterUserInput, Task, User } from "@shared/schema";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import {  useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -31,8 +31,8 @@ export function useCreateTaskMutation() {
         },
         onSuccess: () => {
           toast({
-            title: "Task created",
-            description: "The task has been successfully created.",
+            title: "Операция выполнена",
+            description: "Упражнение успешно создано",
           });
            queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });  
           
@@ -199,56 +199,56 @@ export function useCreateTaskMutation() {
           });
       }
 
-      export function useUpdateTopicMutation() {
-        const { toast } = useToast();
-        return useMutation({
-              mutationFn: async ({ id, data }: { id: number; data: InsertGrammarTopic }) => {
+      // export function useUpdateTopicMutation() {
+      //   const { toast } = useToast();
+      //   return useMutation({
+      //         mutationFn: async ({ id, data }: { id: number; data: InsertGrammarTopic }) => {
                 
-                  const res = await apiRequest("PUT", `/api/grammar-topics/${id}`, data);
-                return await res.json();
-              },
-              onSuccess: () => {
-                toast({
-                  title: "Операция выполнена",
-                  description: "Грамматическая тема успешно обновлена",
-                });
-                queryClient.invalidateQueries({ queryKey: ["/api/grammar-topics"] });
+      //             const res = await apiRequest("PUT", `/api/grammar-topics/${id}`, data);
+      //           return await res.json();
+      //         },
+      //         onSuccess: () => {
+      //           toast({
+      //             title: "Операция выполнена",
+      //             description: "Грамматическая тема успешно обновлена",
+      //           });
+      //           queryClient.invalidateQueries({ queryKey: ["/api/grammar-topics"] });
              
-              },
-              onError: (error: Error) => {
-                toast({
-                  title: "Обновление не выполнено",
-                  description: error.message,
-                  variant: "destructive",
-                });
-              },
-            });
-      }
+      //         },
+      //         onError: (error: Error) => {
+      //           toast({
+      //             title: "Обновление не выполнено",
+      //             description: error.message,
+      //             variant: "destructive",
+      //           });
+      //         },
+      //       });
+      // }
 
-      export function useCreateTopicMutation() {
-        const { toast } = useToast();
-        return useMutation({
-                mutationFn: async () => {
-                  const res = await apiRequest("POST", "/api/grammar-topics");
-                  return await res.json();
-                },
-                onSuccess: () => {
-                  queryClient.invalidateQueries({queryKey: ["/api/grammar-topics"]});
-                  toast({
-                    title: "Операция выполнена",
-                    description: "Упражнение успешно создано.",
-                  });
+      // export function useCreateTopicMutation() {
+      //   const { toast } = useToast();
+      //   return useMutation({
+      //           mutationFn: async () => {
+      //             const res = await apiRequest("POST", "/api/grammar-topics");
+      //             return await res.json();
+      //           },
+      //           onSuccess: () => {
+      //             queryClient.invalidateQueries({queryKey: ["/api/grammar-topics"]});
+      //             toast({
+      //               title: "Операция выполнена",
+      //               description: "Упражнение успешно создано.",
+      //             });
                   
-                },
-                onError: (error: Error) => {
-                  toast({
-                    title: "Создание не выполнено",
-                    description: error.message,
-                    variant: "destructive",
-                  });
-                },
-              });
-      }
+      //           },
+      //           onError: (error: Error) => {
+      //             toast({
+      //               title: "Создание не выполнено",
+      //               description: error.message,
+      //               variant: "destructive",
+      //             });
+      //           },
+      //         });
+      // }
 
 
       export function useDeleteExercisesMutation() {
@@ -399,7 +399,7 @@ export function useCreateTaskMutation() {
               return await res.json();
             },
             onSuccess: (user: Omit<User, 'password'>) => {
-              
+              queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
             },
             onError: (error: Error) => {
               toast({

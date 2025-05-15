@@ -1,4 +1,4 @@
-import { eq, Exercise, exercises, grammarTopics, InsertExercise } from "@shared/schema";
+import { eq, Exercise, exercises, InsertExercise } from "@shared/schema";
 import { isNull, or } from "drizzle-orm";
 import { db } from "server/db";
 
@@ -16,10 +16,9 @@ import { db } from "server/db";
       try {
         
         if (grammarTopic_id) {
-          return await db.select().from(exercises).where(
-              eq(exercises.grammarTopic_id, grammarTopic_id)
+          return await db.select().from(exercises).
             
-          ).orderBy(exercises.id);
+          orderBy(exercises.id);
         } 
         
         return await db.select().from(exercises);
@@ -97,7 +96,7 @@ import { db } from "server/db";
               }
             }
 
-           export async function getTaskExercises(task_id?: number): Promise<(Exercise & { topicName: string | null })[]> {
+           export async function getTaskExercises(task_id?: number): Promise<(Exercise)[]> {
                 try {
                   if (typeof task_id !== "number" || isNaN(task_id)) {
                     throw new Error("Invalid task_id: must be a number");
@@ -106,18 +105,16 @@ import { db } from "server/db";
                     const query = db
                       .select({
                         id: exercises.id,
-                        grammarTopic_id: exercises.grammarTopic_id,
+                        
                         translation: exercises.translation,
                         correctSentence: exercises.correctSentence,
                         words: exercises.words,                   
                         grammarExplanation: exercises.grammarExplanation,
                         task_id: exercises.task_id,
                         createdAt: exercises.createdAt,
-                        createdBy: exercises.createdBy,
-                        topicName: grammarTopics.name       
+                        createdBy: exercises.createdBy      
                       })
                       .from(exercises)
-                      .leftJoin(grammarTopics, eq(exercises.grammarTopic_id, grammarTopics.id))
                       .where(
                         or(
                           eq(exercises.task_id, task_id),
