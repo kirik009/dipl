@@ -148,7 +148,7 @@ const nextSeq = parseInt(seq) + 1;
     );
   }
   
-  if (error || !exercise) {
+  if (error) {
     return (
       <>
         <Navbar />
@@ -214,18 +214,18 @@ const nextSeq = parseInt(seq) + 1;
               <div className="p-6">
                 <div className="mb-6">
                   <h4 className="font-medium text-gray-700 mb-2">Correct answer:</h4>
-                  <p className="p-3 bg-gray-50 rounded text-gray-800">{exercise.correctSentence}</p>
+                  <p className="p-3 bg-gray-50 rounded text-gray-800">{exercise?.correctSentence}</p>
                 </div>
                 
                 <div className="mb-6">
                   <h4 className="font-medium text-gray-700 mb-2">Перевод:</h4>
-                  <p className="p-3 bg-gray-50 rounded text-gray-800">{exercise.translation}</p>
+                  <p className="p-3 bg-gray-50 rounded text-gray-800">{exercise?.translation}</p>
                 </div>
                 
                 <div className="mb-6">
                   <h4 className="font-medium text-gray-700 mb-2">Пояснение:</h4>
                   <div className="p-4 bg-primary-50 rounded-lg text-gray-700">
-                    <p>{exercise.grammarExplanation}</p>
+                    <p>{exercise?.grammarExplanation}</p>
                   </div>
                 </div>
                 

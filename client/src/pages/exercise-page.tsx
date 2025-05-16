@@ -145,16 +145,7 @@ if (timeLeft === null) return;
     },
   });
   
-  // Handle moving a word from word bank to sentence
-  // const handleAddWord = (word: string) => {
-  //   setWordBank(wordBank.filter(w => w !== word));
-  //   setSentence([...sentence, word]);
-  // };
-  
-  // Handle removing a word from sentence back to word bank
-  const handleRemoveWord = (word: string) => {
-    
-  };
+ 
   
   // Reset exercise
   const handleReset = () => {
@@ -257,7 +248,7 @@ if (timeLeft === null) return;
                 </div>
                 <div className="mt-4 flex items-center">
                   <Progress value={40} className="h-2 bg-white/20" />
-                  <span className="ml-3 text-white text-sm font-medium">4/10</span>
+                  <span className="ml-3 text-white text-sm font-medium">{Number(parseInt(seq) + 1)}/{exerciseProgs?.length}</span>
                 </div>
               </div>
               

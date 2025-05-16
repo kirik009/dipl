@@ -83,7 +83,7 @@ export async function updateTaskProg(id: number, num :number| undefined, isActiv
       .where(and(
         eq(taskProgress.userId, userId), 
         eq(taskProgress.taskId, taskId)))
-      .orderBy(desc(taskProgress.id)) 
+      .orderBy(taskProgress.id) 
           return progr
         } catch (error) {
         console.error("Error getting task progress:", error);

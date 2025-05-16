@@ -255,7 +255,7 @@ export async function exerciseRoutes(app: Express) {
               const updatedTask = await storage.updateExerciseProgress(taskId, validatedData);
            
               if (!updatedTask) {
-                return res.status(404).json({ message: "Exercise not found" });
+                return res.status(404).json({ message: "Exercise progress not found" });
               }
               
               res.json(updatedTask);

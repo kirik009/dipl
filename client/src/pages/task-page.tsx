@@ -48,10 +48,11 @@ export default function TaskPage() {
         submitProgressMutation.mutate({newProgressId, i});}
 
     }
-    
-        queryClient.invalidateQueries({queryKey: [`/api/last_task_prog/${user?.id}`]});
+        
+        queryClient.invalidateQueries({queryKey: [`/api/task_exercises_prog/${newProgressId}`]});
+        
         queryClient.invalidateQueries({queryKey: [`/api/task_prog/${newProgressId}`]});
-        queryClient.invalidateQueries({queryKey: [`/api/exercises/${exerciseId}`]});
+        
         
         navigate(`${id}/prog/${newProgressId}/exercises/${exerciseId}/seq/${0}`);
         
@@ -89,7 +90,7 @@ export default function TaskPage() {
     },
   });
   const handleSubmit = () => {
-    if ( Number(task?.triesNumber) != 0 &&  task && taskProgs && taskProgs?.length > Number(task?.triesNumber)) {
+    if ( Number(task?.triesNumber) != 0 &&  task && taskProgs && taskProgs?.length >= Number(task?.triesNumber)) {
       toast({
         title: "Вы не можете пройти это задание",
         variant: "destructive",
