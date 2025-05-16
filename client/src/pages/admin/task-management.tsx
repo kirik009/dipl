@@ -40,10 +40,18 @@ export default function TaskManagement() {
  
   const deleteExercisesMutation = useDeleteExercisesMutation();
   
-  const totalPages = tasks ? Math.ceil(tasks.length / itemsPerPage) : 0;
-  const paginatedTasks = tasks
-    ? tasks.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-    : [];
+  const filteredTasks = tasks
+  ? tasks.filter((task) =>
+      task.name.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  : [];
+
+const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
+
+const paginatedTasks = filteredTasks.slice(
+  (currentPage - 1) * itemsPerPage,
+  currentPage * itemsPerPage
+);
 
   const handleDeleteTask = (task: Task) => {
     setTaskToDelete(task);
@@ -82,7 +90,7 @@ export default function TaskManagement() {
         <div className="relative w-64">
           <Input
             type="text"
-            placeholder="Search exercises..."
+            placeholder="Поиск"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -91,15 +99,7 @@ export default function TaskManagement() {
         </div>
         <div className="flex space-x-2">
        
-          <Button
-          onClick={()=> {deleteExercisesMutation.mutate()}} 
-          asChild>
-            
-            <Link href="/admin/tasks/new">
-              <FilePlus className="mr-2 h-4 w-4" />
-              Добавить задание
-            </Link>
-          </Button>
+       
         </div>
       </div>
 
@@ -164,7 +164,18 @@ export default function TaskManagement() {
           <p className="text-gray-500">Таких упражнений не найдено</p>
         </div>
       )}
-
+  <div className="flex justify-end">
+   <Button
+   
+          onClick={()=> {deleteExercisesMutation.mutate()}} 
+          asChild>
+            
+            <Link href="/admin/tasks/new">
+              <FilePlus className="mr-2 h-4 w-4" />
+              Добавить задание
+            </Link>
+          </Button>
+          </div>
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-end">

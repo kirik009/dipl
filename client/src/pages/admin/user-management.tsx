@@ -233,7 +233,7 @@ const handleCreateUser = (e: React.FormEvent) => {
           <div className="relative w-64">
             <Input
               type="text"
-              placeholder="Search users..."
+              placeholder="Поиск"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -254,95 +254,7 @@ const handleCreateUser = (e: React.FormEvent) => {
               </SelectContent>
             </Select>
   }
-            {user?.role === 'admin' &&
-            <Dialog open={!!userToCreate} onOpenChange={(open) => !open && setUserToCreate(null)}>
-              <DialogTrigger asChild>
-                <Button onClick={() => setUserToCreate({ fullName: "", username: "", role: "user", password: "" })}>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Добавить пользователя
-              </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Создание нового пользователя</DialogTitle>
-                  
-                </DialogHeader>
-                {
-                  userToCreate && 
-                  <form onSubmit={handleCreateUser} className="space-y-4 py-4">
-      <div className="grid grid-cols-1 gap-4">
-        <div className="space-y-2">
-          <label htmlFor="create-fullName" className="text-sm font-medium">
-            Полное имя
-          </label>
-          <Input
-            id="create-fullName"
-            value={userToCreate?.fullName}
-            onChange={(e) =>
-                        setUserToCreate({ ...userToCreate, fullName: e.target.value })
-                      }
-            placeholder="John Doe"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="create-nickName" className="text-sm font-medium">
-            Никнейм
-          </label>
-          <Input
-            id="create-nickName"
-            value={userToCreate?.username}
-            onChange={(e) =>
-                        setUserToCreate({ ...userToCreate, username: e.target.value })
-                      }
-            placeholder="johndoe"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="create-role" className="text-sm font-medium">
-            Роль
-          </label>
-          <Select value={userToCreate?.role} onValueChange={(value) =>
-                        setUserToCreate({ ...userToCreate, role: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Выберите роль" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="user">Студент</SelectItem>
-              <SelectItem value="teacher">Преподаватель</SelectItem>
-              <SelectItem value="admin">Администратор</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <label htmlFor="create-password" className="text-sm font-medium">
-            Пароль
-          </label>
-          <Input
-            type="password"
-            id="create-password"
-            value={userToCreate?.password}
-            onChange={(e) =>
-                        setUserToCreate({ ...userToCreate, password: e.target.value })}
-            placeholder="••••••••"
-          />
-        </div>
-      </div>
-
-      <button
-        type="submit"
-        className="mt-4 bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
-      >
-        Создать пользователя
-      </button>
-    </form>
-  }
-               
-              </DialogContent>
-            </Dialog>
-  }
+     
           </div>
         </div>
 
@@ -801,7 +713,97 @@ const handleCreateUser = (e: React.FormEvent) => {
   </DialogContent>
 </Dialog>
 
-        
+               {user?.role === 'admin' &&
+               <div className="flex justify-end">
+            <Dialog open={!!userToCreate} onOpenChange={(open) => !open && setUserToCreate(null)}>
+              <DialogTrigger asChild>
+                <Button onClick={() => setUserToCreate({ fullName: "", username: "", role: "user", password: "" })}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                Добавить пользователя
+              </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Создание нового пользователя</DialogTitle>
+                  
+                </DialogHeader>
+                {
+                  userToCreate && 
+                  <form onSubmit={handleCreateUser} className="space-y-4 py-4">
+      <div className="grid grid-cols-1 gap-4">
+        <div className="space-y-2">
+          <label htmlFor="create-fullName" className="text-sm font-medium">
+            Полное имя
+          </label>
+          <Input
+            id="create-fullName"
+            value={userToCreate?.fullName}
+            onChange={(e) =>
+                        setUserToCreate({ ...userToCreate, fullName: e.target.value })
+                      }
+            placeholder="John Doe"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="create-nickName" className="text-sm font-medium">
+            Никнейм
+          </label>
+          <Input
+            id="create-nickName"
+            value={userToCreate?.username}
+            onChange={(e) =>
+                        setUserToCreate({ ...userToCreate, username: e.target.value })
+                      }
+            placeholder="johndoe"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="create-role" className="text-sm font-medium">
+            Роль
+          </label>
+          <Select value={userToCreate?.role} onValueChange={(value) =>
+                        setUserToCreate({ ...userToCreate, role: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Выберите роль" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="user">Студент</SelectItem>
+              <SelectItem value="teacher">Преподаватель</SelectItem>
+              <SelectItem value="admin">Администратор</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="create-password" className="text-sm font-medium">
+            Пароль
+          </label>
+          <Input
+            type="password"
+            id="create-password"
+            value={userToCreate?.password}
+            onChange={(e) =>
+                        setUserToCreate({ ...userToCreate, password: e.target.value })}
+            placeholder="••••••••"
+          />
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        className="mt-4 bg-primary text-white px-4 py-2 rounded hover:bg-primary/90"
+      >
+        Создать пользователя
+      </button>
+    </form>
+  }
+               
+              </DialogContent>
+            </Dialog>
+            </div>
+  }
       </div> 
     );
   }
