@@ -556,8 +556,6 @@ const handleCreateUser = (e: React.FormEvent) => {
           </AlertDialogContent>
         </AlertDialog>
 
-
-
             {/* Edit User Dialog */}
              <Dialog open={!!userToAddTask} onOpenChange={(open) => {!open && setUserToAddTask(null)
               queryClient.invalidateQueries({ queryKey: [`/api/assignedExpiredTasks/${userToAddTask?.id}`] });

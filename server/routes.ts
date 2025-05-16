@@ -2,8 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
-import { insertExerciseSchema,  submitExerciseSchema, insertTaskSchema, insertTaskProgressSchema, User } from "@shared/schema";
-import { z } from "zod";
+import { User } from "@shared/schema";
 import { taskRoutes } from "./routes/taskRoutes";
 import { exerciseRoutes } from "./routes/exerciseRoutes";
 
