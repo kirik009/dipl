@@ -100,7 +100,7 @@ export default function TaskResults() {
           <div className="flex flex-col gap-4 mt-8">
             {exerciseProgs && exerciseProgs.map((exProg, index) => (
               <div key={index} className="flex gap-4">
-                <div className="bg-blue-300 p-4 rounded w-64">
+                <div className="bg-blue-300 p-4 rounded w-fit min-w-[175px]" >
                   <p className="font-bold mb-2">Вопрос {index + 1}</p>
                   <p className="flex items-center gap-2">
                     {exProg.isCorrect ? (
