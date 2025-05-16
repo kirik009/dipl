@@ -118,6 +118,7 @@ export async function exerciseRoutes(app: Express) {
             }
             
             const validatedData = insertExerciseSchema.parse(req.body);
+            
             const exercise = await storage.createExercise({
               ...validatedData,
               createdBy: req.user.id,

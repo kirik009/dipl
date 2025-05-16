@@ -28,7 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useCreateTaskMutation, useDeleteExerciseMutation, useUpdateExercisesMutation, useUpdateTaskMutation } from "@/hooks/use-mutate";
+import { useCreateTaskMutation, useDeleteExerciseMutation, useUpdateTaskMutation } from "@/hooks/use-mutate";
+import { queryClient } from "@/lib/queryClient";
 type FormValues = z.infer<typeof insertTaskSchema>;
 
 export default function TaskEditor() {
@@ -55,7 +56,7 @@ export default function TaskEditor() {
   });
 
   const { data: newTask, isLoading: isLoadingNewTask, error: newTaskError } = useQuery<Task>({
-    queryKey: [`/api/NewTask`]
+    queryKey: [`/api/newTask/${user?.id}`],
   });
 
   const { data: allTasks, isLoading: tasksLoading, error: tasksError } = useQuery<Task[]>({
@@ -103,11 +104,11 @@ useEffect(() => {
   }
 }, [task, form, id]);
   
-    const updateExercisesMutation = useUpdateExercisesMutation(newTask, id, isEditing)
+   
 
   const updateTaskMutation =  useUpdateTaskMutation(id);
-  const createTaskMutation = useCreateTaskMutation();
-    
+  
+    const createTaskMutation = useCreateTaskMutation();
   const deleteExerciseMutation = useDeleteExerciseMutation(id, isEditing,  () => setExerciseToDelete(null))
   
   
@@ -126,6 +127,7 @@ useEffect(() => {
       };
   // Handle form submission
 const onSubmit = (values: FormValues) => {
+  
   if (allTasks?.some(task => task.name.trim().toLowerCase() === values.name.trim().toLowerCase() && task.id !== Number(id))) {
   form.setError("name", { message: "Задание с таким названием уже существует" });
   return;
@@ -148,14 +150,18 @@ localStorage.removeItem(`taskForm-${id ?? "new"}`);
     ...values,
     exercisesNumber: exercises.length,
   };
-
+ 
   if (isEditing) {
     updateTaskMutation.mutate(taskData);
   } else {
+    
     createTaskMutation.mutate(taskData);
-  }
-
-  updateExercisesMutation.mutate();
+    queryClient.invalidateQueries({ queryKey: [`/api/newTask/${user?.id}`] }); 
+    queryClient.invalidateQueries({ queryKey: ["/api/tasks"] }); 
+     
+    
+ }
+    
   window.history.back();
 };
 

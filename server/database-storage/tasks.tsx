@@ -74,12 +74,12 @@ export async function updateTask(id: number, taskUpdate: Partial<InsertTask>): P
     }
 
    export async function getLatestTask(userId: number): Promise<Task | undefined> {
-      const [task] = await db
+      const task = await db
         .select()
         .from(tasks)
         .orderBy(desc(tasks.id))
         .where(eq(tasks.createdBy, userId))
         .limit(1);
         
-      return task;
+      return task[0];
     }

@@ -48,9 +48,7 @@ export default function TaskPage() {
         submitProgressMutation.mutate({newProgressId, i});}
 
     }
-        
-        queryClient.invalidateQueries({queryKey: [`/api/task_exercises_prog/${newProgressId}`]});
-        
+     
         queryClient.invalidateQueries({queryKey: [`/api/task_prog/${newProgressId}`]});
         
         
@@ -142,7 +140,7 @@ export default function TaskPage() {
     <div className="flex flex-col items-center mb-6">
       <p className="mx-auto w-fit">{task?.name}</p>
       <p className="mx-auto w-fit">
-        Количество попыток: {task?.triesNumber ?? "не ограничено"}
+        Количество попыток: {task?.triesNumber !== 0 ? task?.triesNumber : "не ограничено"}
       </p>
       <p className="mx-auto w-fit">
         Ограничение по времени: {task?.timeConstraint !== "00:00:00" ? task?.timeConstraint : "не ограничено"}

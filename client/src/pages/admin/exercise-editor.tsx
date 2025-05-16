@@ -59,14 +59,7 @@ export default function ExerciseEditor() {
   });
   
   // Fetch grammar topics
-  const { data: grammarTopics, isLoading: isLoadingTopics } = useQuery({
-    queryKey: ["/api/grammar-topics"],
-    queryFn: async () => {
-      const response = await fetch("/api/grammar-topics");
-      if (!response.ok) throw new Error("Failed to fetch");
-      return response.json();
-    },
-  });
+  
   
   // Form definition
   const form = useForm<FormValues>({
@@ -91,10 +84,6 @@ export default function ExerciseEditor() {
     }
   }, [exercise, form]);
   
-    useEffect(() => {
-      console.log("form errors:", form.formState.errors);
-    }, [form.formState.errors]);
-
   // Create exercise mutation
   const createExerciseMutation = useCreateExerciseMutation(task_id)
   
@@ -131,7 +120,7 @@ export default function ExerciseEditor() {
     }
   };
   
-  const isLoading = isLoadingExercise || isLoadingTopics;
+  const isLoading = isLoadingExercise;
   
   const extractTextFromPdf = async (arrayBuffer: ArrayBuffer) => {
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -315,7 +304,7 @@ export default function ExerciseEditor() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => navigate("/admin/exercises")}
+                onClick={() => window.history.back()}
                 className="mr-2"
               >
                 Отменить

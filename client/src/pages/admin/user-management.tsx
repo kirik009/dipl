@@ -101,17 +101,19 @@ const queries = assignedSolvedTasks?.map((task) => ({
     // Update user mutation
     const updateUserMutation = useUpdateUserMutation(() => setUserToEdit(null))
     const assignMutation = useAssignMutation();
-    const updateAssignedTaskMutation = useUpdateAssignedTaskMutation();
+    // const updateAssignedTaskMutation = useUpdateAssignedTaskMutation();
     const deleteAssignedTaskMutation = useDeleteAssignedTaskMutation();
     
-    const handleUpdateAssignedTask = (assignmentId: number, updatedData: { dueDate?: Date }) => {
-  updateAssignedTaskMutation.mutate({
-    id: assignmentId,
-    ...updatedData,
-  },
-{onSuccess: () => {queryClient.invalidateQueries({ queryKey: [`/api/assignedTasks/${userToAddTask?.id}`] });}}
-);
-};
+//     const handleUpdateAssignedTask = (assignmentId: number, updatedData: { dueDate?: Date }) => {
+//   updateAssignedTaskMutation.mutate({
+//     id: assignmentId,
+//     ...updatedData,
+//   },
+// {onSuccess: () => {
+ 
+//   queryClient.invalidateQueries({ queryKey: [`/api/assignedTasks/${userToAddTask?.id}`] });}}
+// );
+// };
 
 
     const handleAssign = (e: React.FormEvent) => {
@@ -122,6 +124,7 @@ const queries = assignedSolvedTasks?.map((task) => ({
         
         assignMutation.mutate({assignedBy: user?.id, userId: userToAddTask.id, taskId: exerciseId, dueDate: new Date(dueDate) }, 
         {onSuccess: () => {
+          
           queryClient.invalidateQueries({ queryKey: [`/api/assignedTasks/${userToAddTask?.id}`] });
       setUserToAddTask(null)}});
       });

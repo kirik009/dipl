@@ -78,12 +78,9 @@ import { db } from "server/db";
           
             export async function getTaskExercise(task_id?: number, seq?: number): Promise<Exercise> {
               try {
-                
                 if (task_id) {
-                  
                   const exers = await db.select().from(exercises).orderBy(exercises.id).where(
                     eq(exercises.task_id, task_id));
-                  
                   return exers[Number(seq)];
                 } 
                 

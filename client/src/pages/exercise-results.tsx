@@ -2,7 +2,7 @@ import { useParams, useLocation, Link as WouterLink } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
-import { Exercise, insertTaskProgressSchema, Task, } from "@shared/schema";
+import { AssingedTask, Exercise, insertTaskProgressSchema, Task, } from "@shared/schema";
 import { CheckCircle, XCircle } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { navigate } from "wouter/use-browser-location";
@@ -26,29 +26,8 @@ export default function ExerciseResults() {
 });
 
 const nextSeq = parseInt(seq) + 1;
- const { data: nextExercise, isLoading: nextExerciseLoading, error: nextExerciseError } = useQuery<Exercise>({
-    queryKey: [`/api/task_exercises/${taskId}/seq/${nextSeq}`],
-    queryFn: async () => {
-        const response = await fetch(`/api/task_exercises/${taskId}/seq/${nextSeq}`); //возможно  seq
-        if (!response.ok) throw new Error("Failed to fetch exercises");
-        return response.json();
-      },
-      staleTime: 0,           
-  refetchOnMount: true, 
-  }); 
 
- 
-  const { data: exercise, isLoading: exerciseLoading, error: exerciseError } = useQuery<Exercise>({
-    queryKey: [`/api/task_exercises/${taskId}/seq/${seq}`],
-    queryFn: async () => {
-        const response = await fetch(`/api/task_exercises/${taskId}/seq/${seq}`);
-        if (!response.ok) throw new Error("Failed to fetch exercises");
-        return response.json();
-      },
-      staleTime: 0,           
-  refetchOnMount: true, 
-  }); 
-   const { data: task, isLoading: taskLoading, error: taskError } = useQuery<Task>({
+ const { data: task, isLoading: taskLoading, error: taskError } = useQuery<Task>({
       queryKey: [`/api/tasks/${taskId}`],
       queryFn: async () => {
           const response = await fetch(`/api/tasks/${taskId}`);
@@ -59,8 +38,35 @@ const nextSeq = parseInt(seq) + 1;
   refetchOnMount: true, 
     });
 
-    const  isLoading = exerciseLoading || taskLoading || nextExerciseLoading;
-    const error = taskError || exerciseError || exerciseError;
+ const { data: nextExercise, isLoading: nextExerciseLoading, error: nextExerciseError } = useQuery<Exercise>({
+    queryKey: [`/api/task_exercises/${taskId}/seq/${nextSeq}`],
+    queryFn: async () => {
+        const response = await fetch(`/api/task_exercises/${taskId}/seq/${nextSeq}`); //возможно  seq
+        if (!response.ok) throw new Error("Failed to fetch next exercise");
+        return response.json();
+      },
+     enabled: nextSeq >=  Number(task?.exercisesNumber),
+  }); 
+
+ 
+  const { data: exercise, isLoading: exerciseLoading, error: exerciseError } = useQuery<Exercise>({
+    queryKey: [`/api/task_exercises/${taskId}/seq/${seq}`],
+    queryFn: async () => {
+        const response = await fetch(`/api/task_exercises/${taskId}/seq/${seq}`);
+        if (!response.ok) throw new Error("Failed to fetch this exercises");
+        return response.json();
+      },
+     
+   
+  }); 
+  
+ const { data: assignedTasks, isLoading: assignedTasksLoading, error: assignedTasksError } = useQuery<AssingedTask[]>({
+    queryKey: [`/api/assignedTasks/${user?.id}`],   
+   
+  }); 
+  
+    const  isLoading = exerciseLoading || taskLoading || nextExerciseLoading || assignedTasksLoading;
+    const error = taskError || exerciseError || exerciseError || assignedTasksError;
     
  
   
@@ -104,8 +110,9 @@ const nextSeq = parseInt(seq) + 1;
   useEffect(() => {
  if (timeLeft === null) return;
     if (timeLeft <= 0) {
+      if (assignedTasks && assignedTasks?.length > 0) {
     updateAssignedTaskStatusMutation.mutate();
-
+      }
       updateTaskMutation.mutate( 
         {isActive: false}
      )
@@ -121,8 +128,10 @@ const nextSeq = parseInt(seq) + 1;
   
   const handleComplete = () => {
     if (task && nextSeq >=  Number(task.exercisesNumber)) {
+if (assignedTasks && assignedTasks?.length > 0) {
     updateAssignedTaskStatusMutation.mutate();
-      updateTaskMutation.mutate( 
+}
+    updateTaskMutation.mutate( 
          {isActive: false}
       )
       

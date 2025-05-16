@@ -9,6 +9,7 @@ import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import {  useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useLocation } from "wouter";
+import { ConsoleLogWriter } from "drizzle-orm";
 
 type TaskFormValues = z.infer<typeof insertTaskSchema>;
 
@@ -20,32 +21,7 @@ const formSchema = insertExerciseSchema.extend({
 type ExerciseFormValues = z.infer<typeof formSchema>;
 
 type UserWithoutPassword = Omit<User, 'password'>;
-export function useCreateTaskMutation() { 
-    const [, navigate] = useLocation();
-        const { toast } = useToast();
-    return useMutation({
-    
-        mutationFn: async (data: TaskFormValues) => {
-          const res = await apiRequest("POST", "/api/tasks", data);
-          return await res.json();
-        },
-        onSuccess: () => {
-          toast({
-            title: "Операция выполнена",
-            description: "Упражнение успешно создано",
-          });
-           queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });  
-          
-        },
-        onError: (error: Error) => {
-          toast({
-            title: "Creation failed",
-            description: error.message,
-            variant: "destructive",
-          });
-        },
-      });
-    }
+
 
       export function useUpdateTaskMutation(id: string) {
         const [, navigate] = useLocation();
@@ -101,27 +77,7 @@ export function useCreateTaskMutation() {
           });
       }
 
-      export function useUpdateExercisesMutation(newTask: Task | undefined, id: string, isEditing: boolean) {
-        const [, navigate] = useLocation();
-        return useMutation({
-              mutationFn: async () => {
-                if (isEditing) {
-                  const res = await apiRequest("PUT", `/api/task_exercises/assign/${newTask?.id}`);
-                return await res.json();
-              }
-                else {
-                  const res = await apiRequest("PUT", `/api/task_exercises/assign/${id}`);
-                return await res.json();
-              }
-          
-              },
-              onSuccess: () => {
-                queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
-                navigate("/admin/tasks");
-              },
-              
-            });
-      }
+     
 
       export function useUpdateExerciseMutation(id: string, task_id: string) {
         
@@ -153,6 +109,8 @@ export function useCreateTaskMutation() {
         const { toast } = useToast();
         return useMutation({
             mutationFn: async (data: Omit<ExerciseFormValues, "newWord">) => {
+              data.task_id = Number(task_id)
+              
               const res = await apiRequest("POST", "/api/exercises", data);
               return await res.json();
             },
@@ -175,29 +133,29 @@ export function useCreateTaskMutation() {
           });
       }
 
-      export function useDeleteTopicMutation(onSuccessCallback?: () => void) {
-        const { toast } = useToast();
-        return  useMutation({
-            mutationFn: async (taskId: number) => {
-              await apiRequest("DELETE", `/api/grammar-topics/${taskId}`);
-            },
-            onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: ["/api/grammar-topics"] });
-              toast({
-                title: "Операция выполнена",
-                description: "Грамматическая тема удалена.",
-              });
-              onSuccessCallback?.();
-            },
-            onError: (error: Error) => {
-              toast({
-                title: "Удаление не выполнено",
-                description: error.message,
-                variant: "destructive",
-              });
-            },
-          });
-      }
+      // export function useDeleteTopicMutation(onSuccessCallback?: () => void) {
+      //   const { toast } = useToast();
+      //   return  useMutation({
+      //       mutationFn: async (taskId: number) => {
+      //         await apiRequest("DELETE", `/api/grammar-topics/${taskId}`);
+      //       },
+      //       onSuccess: () => {
+      //         queryClient.invalidateQueries({ queryKey: ["/api/grammar-topics"] });
+      //         toast({
+      //           title: "Операция выполнена",
+      //           description: "Грамматическая тема удалена.",
+      //         });
+      //         onSuccessCallback?.();
+      //       },
+      //       onError: (error: Error) => {
+      //         toast({
+      //           title: "Удаление не выполнено",
+      //           description: error.message,
+      //           variant: "destructive",
+      //         });
+      //       },
+      //     });
+      // }
 
       // export function useUpdateTopicMutation() {
       //   const { toast } = useToast();
@@ -334,6 +292,44 @@ export function useCreateTaskMutation() {
           },
         });
       }
+
+      export function useCreateTaskMutation() {
+        const [, navigate] = useLocation();
+        const assignExercises =  useMutation({
+              mutationFn: async (newTaskId: number) => {
+              const res = await apiRequest("PUT", `/api/task_exercises/assign/${newTaskId}`);
+                return await res.json();
+             
+              },
+              onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: ["/api/tasks"] });
+                navigate("/admin/tasks");
+              },
+              
+            });
+      
+        const { toast } = useToast();
+    return useMutation({
+    
+        mutationFn: async (data: TaskFormValues) => {
+          const res = await apiRequest("POST", "/api/tasks", data);
+          return await res.json();
+        },
+        onSuccess: (data) => {
+      
+          assignExercises.mutate(data.id);
+         
+        },
+        onError: (error: Error) => {
+          
+          toast({
+            title: "Создание не выполнено",
+            description: error.message,
+            variant: "destructive",
+          });
+        },
+      });
+    }
         export function useAssignMutation() {
           const {toast} = useToast();
           return useMutation({
@@ -394,7 +390,7 @@ export function useCreateTaskMutation() {
             const {toast} = useToast();
             return useMutation({
             mutationFn: async (userData: InsertUser) => {
-              console.log(userData)
+            
               const res = await apiRequest("POST", "/api/createUser", userData);
               return await res.json();
             },

@@ -10,7 +10,7 @@ import  WordBank  from "@/components/ui/dnd/word-bank";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Exercise, TaskProgress,insertTaskProgressSchema, ExerciseProgress } from "@shared/schema";
+import { Exercise, TaskProgress,insertTaskProgressSchema, ExerciseProgress, AssingedTask } from "@shared/schema";
 import { Loader2, RefreshCw } from "lucide-react";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
@@ -34,8 +34,13 @@ export default function ExercisePage() {
           if (!response.ok) throw new Error("Failed to fetch exercises progress");
           return response.json();
         },
-        
       });
+
+       const { data: assignedTasks, isLoading: assignedTasksLoading, error: assignedTasksError } = useQuery<AssingedTask[]>({
+          queryKey: [`/api/assignedTasks/${user?.id}`],   
+         
+        }); 
+
   const [, navigate] = useLocation();
   const { toast } = useToast();
   type WordItem = { id: string; text: string };  
@@ -80,8 +85,11 @@ export default function ExercisePage() {
 useEffect(() => {
 if (timeLeft === null) return;
       if (timeLeft <= 0) {
+        if (assignedTasks && assignedTasks?.length > 0) {
         updateAssignedTaskStatusMutation.mutate();
+        }
         updateTaskMutation.mutate( 
+        
           {isActive: false}
        )
         navigate(`/tasks/${taskId}/prog/${progressId}/results`)
@@ -185,7 +193,7 @@ if (timeLeft === null) return;
     navigate(`/tasks/${taskId}/results/${exerciseId}?skipped=true`);
   };
   
-  if (isLoading ||  exerciseProgsLoading || taskProgLoading) {
+  if (isLoading ||  exerciseProgsLoading || taskProgLoading || assignedTasksLoading) {
     return (
       <>
         <Navbar />
@@ -196,7 +204,7 @@ if (timeLeft === null) return;
     );
   }
   
-  if (error || exerciseProgsError || taskProgError) {
+  if (error || exerciseProgsError || taskProgError || assignedTasksError) {
     return (
       <>
         <Navbar />

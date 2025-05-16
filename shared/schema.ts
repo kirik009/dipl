@@ -97,6 +97,7 @@ export const insertAssignedTaskSchema = createInsertSchema(assignedTasks).pick({
 });
 
 export const insertTaskSchema = createInsertSchema(tasks).pick({
+  id: true,
   name: true,
   createdBy: true,
   triesNumber: true,
