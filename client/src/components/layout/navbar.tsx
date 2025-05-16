@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { GraduationCap, Menu, X } from "lucide-react";
+import { GraduationCap, Loader2, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -12,7 +12,6 @@ export function Navbar() {
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
-
   const handleLogout = () => {
     logoutMutation.mutate();
   };
@@ -33,7 +32,16 @@ export function Navbar() {
     if (item.protected && !user) return false;
     return true;
   });
-
+ if (assignedLoading) {
+    return (
+        <>
+      <div className="flex justify-center items-center py-12">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+      
+      </>
+    );
+  }
   return (
     <header className="bg-white shadow-sm fixed w-full top-0 z-50">
       <nav className="container mx-auto px-4 py-3 flex items-center justify-between">

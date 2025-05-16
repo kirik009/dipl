@@ -14,7 +14,6 @@ import ProfilePage from "@/pages/profile-page";
 import AdminDashboard from "@/pages/admin/dashboard";
 import { ProtectedRoute } from "./lib/protected-route";
 import TasksPage from "./pages/tasks-page";
-import TaskEditor from "./pages/admin/task-editor";
 import TaskPage from "./pages/task-page";
 import TaskResults from "./pages/task-results";
 
