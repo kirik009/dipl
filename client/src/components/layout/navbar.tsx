@@ -6,10 +6,11 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { AssingedTask } from "@shared/schema";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function Navbar() {
   const { user, logoutMutation } = useAuth();
-  
+  const isMobile = useIsMobile();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [location] = useLocation();
   const handleLogout = () => {
@@ -45,6 +46,7 @@ export function Navbar() {
   return (
     <header className="bg-white shadow-sm fixed w-full top-0 z-50">
       <nav className="container mx-auto px-4 py-3 flex items-center justify-between">
+         <div className={` ${isMobile ? "flex flex-col" : "flex w-full justify-between"}`}> 
         <div className="flex items-center space-x-1">
           <GraduationCap className="h-6 w-6 text-primary" />
           <Link href="/" className="font-heading font-semibold text-xl text-gray-800">
@@ -71,7 +73,7 @@ export function Navbar() {
           {user ? (
             <>
               <span className="hidden md:inline text-sm text-gray-600">
-                Привет, {user.fullName}
+                {user.fullName}
               </span>
               <Button 
                 variant="outline" 
@@ -87,17 +89,13 @@ export function Navbar() {
                 variant="ghost" 
                 asChild
               >
-                <Link href="/auth">Войти</Link>
+                <Link href="/auth">Войти/Зарегистрироваться</Link>
               </Button>
-              <Button 
-                asChild
-              >
-                <Link href="/auth">Зарегистрироваться</Link>
-              </Button>
+              
             </>
           )}
         </div>
-        
+        </div>
         <Button 
           variant="ghost" 
           size="icon"

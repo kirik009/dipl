@@ -17,16 +17,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Loader2, Pencil, Trash2, Search, FilePlus } from "lucide-react";
 import { useDeleteExercisesMutation, useDeleteTaskMutation } from "@/hooks/use-mutate";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function TaskManagement() {
-  const { toast } = useToast();
   const [, navigate] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
-  const [exerciseToDelete, setExerciseToDelete] = useState<Exercise | null>(null);
+  
   const itemsPerPage = 10;
-
+  const isMobile = useIsMobile();
   // Fetch exercises
   const { data: tasks, isLoading, error } = useQuery<Task[]>({
     queryKey: ["/api/tasks"],
@@ -98,7 +98,19 @@ const paginatedTasks = filteredTasks.slice(
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
         </div>
         <div className="flex space-x-2">
-       
+         {!isMobile && 
+   <Button
+   
+          onClick={()=> {deleteExercisesMutation.mutate()}} 
+          asChild>
+            
+            <Link href="/admin/tasks/new">
+              <FilePlus className="mr-2 h-4 w-4" />
+              Добавить задание
+            </Link>
+          </Button>
+          
+}
        
         </div>
       </div>
@@ -164,7 +176,7 @@ const paginatedTasks = filteredTasks.slice(
           <p className="text-gray-500">Таких упражнений не найдено</p>
         </div>
       )}
-  <div className="flex justify-end">
+   {isMobile && <div className="flex justify-end">
    <Button
    
           onClick={()=> {deleteExercisesMutation.mutate()}} 
@@ -176,6 +188,7 @@ const paginatedTasks = filteredTasks.slice(
             </Link>
           </Button>
           </div>
+}
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="mt-6 flex items-center justify-end">

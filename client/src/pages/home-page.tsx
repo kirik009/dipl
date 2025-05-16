@@ -10,10 +10,11 @@ import {
   Languages, 
   Info
 } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function HomePage() {
   const { user } = useAuth();
-
+  const isMobile = useIsMobile();
   return (
     <>
       <Navbar />
@@ -73,7 +74,7 @@ export default function HomePage() {
     </p>
   </div>
 
-  <div className="grid grid-cols-3 gap-8">
+  <div className={ isMobile ? "flex flex-col" : "grid grid-cols-3 gap-8"}>
     {/* Первый ряд - три элемента */}
     <div className="bg-white p-8 rounded-xl shadow-sm">
       <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center mb-4">

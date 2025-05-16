@@ -48,7 +48,8 @@ export default function TaskPage() {
         submitProgressMutation.mutate({newProgressId, i});}
 
     }
-     
+   
+     queryClient.invalidateQueries({queryKey: [`/api/task_exercises_prog/${newProgressId}`]});
         queryClient.invalidateQueries({queryKey: [`/api/task_prog/${newProgressId}`]});
         
         

@@ -45,7 +45,7 @@ const nextSeq = parseInt(seq) + 1;
         if (!response.ok) throw new Error("Failed to fetch next exercise");
         return response.json();
       },
-     enabled: nextSeq >=  Number(task?.exercisesNumber),
+     
   }); 
 
  
@@ -128,6 +128,7 @@ const nextSeq = parseInt(seq) + 1;
   
   const handleComplete = () => {
     if (task && nextSeq >=  Number(task.exercisesNumber)) {
+     
 if (assignedTasks && assignedTasks?.length > 0) {
     updateAssignedTaskStatusMutation.mutate();
 }
@@ -138,9 +139,10 @@ if (assignedTasks && assignedTasks?.length > 0) {
       
 }
  else {
+    console.log(nextExercise)
   if (timeLeft !== null)
   localStorage.setItem("timeLeft", String(timeLeft));
-
+ 
   if (nextExercise?.id)
   navigate(`/tasks/${taskId}/prog/${progressId}/exercises/${nextExercise?.id}/seq/${nextSeq}`)
  } 
