@@ -6,9 +6,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link, useLocation } from "wouter";
 import { Navbar } from "@/components/layout/navbar";
-
+import { toast } from "@/hooks/use-toast";
 import { Loader2, Pencil, Trash2, Search, FilePlus } from "lucide-react";
 import { navigate } from "wouter/use-browser-location";
 import { array } from "zod";
@@ -97,6 +96,10 @@ const paginatedTasks = currentTasks.slice(
 
 if (taskProg?.isActive && nextExercise) {
   navigate(`/tasks/${taskProg.taskId}/prog/${taskProg.id}/exercises/${nextExercise.id}/seq/${nextSeq}`);
+  toast({
+        title: "Вы не доделали задание",
+        description: "Пожалуйста, закончите это задание, чтобы приступить к другим упражнениям",
+      });
   return null;
 }
   if (isLoading || exerciseProgsLoading || assignedLoading||  progLoading || nextExerciseLoading) {
