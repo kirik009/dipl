@@ -119,10 +119,10 @@ if (timeLeft === null) return;
   // Submit exercise mutation
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const userAnswer = sentence.map(w => w.text).join(" ");
-     const correctAnswer = exercise?.correctSentence.replace(/[!?.]/g, "")
+      const userAnswer = sentence.map(w => w.text).join(" ").toLowerCase().trim();
+     const correctAnswer = exercise?.correctSentence.replace(/[!?.]/g, "").toLowerCase().trim();
      if (exerciseProgs) {
-     
+     console.log(exerciseProgs)
       const res = await apiRequest("PATCH", `/api/exerciseProg/${exerciseProgs[Number(seq)]?.id}`, {
         // exerciseId: parseInt(exerciseId),
         isCorrect: userAnswer === correctAnswer,
@@ -187,11 +187,6 @@ if (timeLeft === null) return;
     }
   };
   
-  // Skip exercise
-  const handleSkip = () => {
-    // Fetch the next exercise - for now we just navigate to the results
-    navigate(`/tasks/${taskId}/results/${exerciseId}?skipped=true`);
-  };
   
   if (isLoading ||  exerciseProgsLoading || taskProgLoading || assignedTasksLoading) {
     return (
