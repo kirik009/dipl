@@ -21,6 +21,7 @@ export default function ExercisePage() {
   const { data: task, isLoading: taskLoading, error: taskError } = useQuery<Task>({
         queryKey: [`/api/tasks/${taskId}`],
       });
+      
   const { data: taskProg, isLoading: taskProgLoading, error: taskProgError } = useQuery<TaskProgress>({
           queryKey: [`/api/task_prog/${progressId}`], 
         });
@@ -28,7 +29,7 @@ export default function ExercisePage() {
     queryKey: [`/api/exercises/${exerciseId}`],
   });
 
-  const { data: exerciseProgs, isLoading: exerciseProgsLoading, error: exerciseProgsError } =
+  const { data: exerciseProgs, isLoading: exerciseProgsLoading, error: exerciseProgsError, refetch} =
       useQuery<ExerciseProgress[]>({
         queryKey: [`/api/task_exercises_prog/${progressId}`],
         queryFn: async () => {
@@ -36,11 +37,9 @@ export default function ExercisePage() {
           if (!response.ok) throw new Error("Failed to fetch exercises progress");
           return response.json();
         },
-        staleTime: 0,
-        refetchOnMount: true,
-refetchOnWindowFocus: true,
+       
       });
-console.log(exerciseProgs)
+
        const { data: assignedTasks, isLoading: assignedTasksLoading, error: assignedTasksError } = useQuery<AssingedTask[]>({
           queryKey: [`/api/assignedTasks/${user?.id}`],   
          
@@ -115,6 +114,9 @@ useEffect(() => {
     });
 
 useEffect(() => {
+  if (task?.exercisesNumber !== exerciseProgs?.length) {
+    refetch();
+  }
   if (timeLeft === null || timeLeft > 0) return;
   if (task?.timeConstraint === "00:00:00") return;
   if (assignedTasks && assignedTasks?.length > 0) {
@@ -211,7 +213,7 @@ useEffect(() => {
   };
   
   
-  if (isLoading ||  exerciseProgsLoading || taskProgLoading || assignedTasksLoading) {
+  if ((task?.exercisesNumber !== exerciseProgs?.length) ||isLoading ||  exerciseProgsLoading || taskProgLoading || assignedTasksLoading) {
     return (
       <>
         <Navbar />
