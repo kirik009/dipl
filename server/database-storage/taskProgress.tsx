@@ -1,6 +1,7 @@
 import { and, desc, eq, ExerciseProgress, InsertTaskProgress, TaskProgress, taskProgress, tasks } from "@shared/schema";
 import { db } from "server/db";
 import { getExerciseProgress } from "./exerciseProgress";
+import { time } from "console";
 
 export async function updateTaskProg(id: number, num :number| undefined, isActive: boolean): Promise<TaskProgress | undefined> {
     try {
@@ -32,12 +33,24 @@ export async function updateTaskProg(id: number, num :number| undefined, isActiv
     }
   }
 
-   export async function getTaskProgress( taskProgressId: number): Promise<TaskProgress> {
+   export async function getTaskProgress( taskProgressId: number): Promise<({exercisesNumber: number | null} &{timeConstraint: string | null} & TaskProgress)> {
       try {
         
         const [progr] = await db
-          .select()
+          .select({
+            id: taskProgress.id,
+            correctAnswers: taskProgress.correctAnswers,
+            userId: taskProgress.userId,
+            
+            taskId: taskProgress.taskId,
+            completedAt: taskProgress.completedAt,
+            startedAt: taskProgress.startedAt,
+            isActive: taskProgress.isActive,
+             exercisesNumber: tasks.exercisesNumber,
+            timeConstraint: tasks.timeConstraint,
+           })
           .from(taskProgress)
+          .leftJoin(tasks, eq(taskProgress.taskId, tasks.id))
           .where(eq(taskProgress.id, taskProgressId));
           
           return progr

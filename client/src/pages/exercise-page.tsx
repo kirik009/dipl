@@ -18,11 +18,9 @@ export default function ExercisePage() {
   const { user } = useAuth();
   const { taskId, progressId, exerciseId, seq } = useParams<{taskId : string, progressId: string, exerciseId: string, seq: string}>();
    
-  const { data: task, isLoading: taskLoading, error: taskError } = useQuery<Task>({
-        queryKey: [`/api/tasks/${taskId}`],
-      });
+
       
-  const { data: taskProg, isLoading: taskProgLoading, error: taskProgError } = useQuery<TaskProgress>({
+  const { data: taskProg, isLoading: taskProgLoading, error: taskProgError } = useQuery<{exercisesNumber: number | null} &{timeConstraint: string | null} & TaskProgress>({
           queryKey: [`/api/task_prog/${progressId}`], 
         });
   const { data: exercise, isLoading, error } = useQuery<Exercise>({
@@ -32,12 +30,10 @@ export default function ExercisePage() {
   const { data: exerciseProgs, isLoading: exerciseProgsLoading, error: exerciseProgsError, refetch} =
       useQuery<ExerciseProgress[]>({
         queryKey: [`/api/task_exercises_prog/${progressId}`],
-       
       });
 
        const { data: assignedTasks, isLoading: assignedTasksLoading, error: assignedTasksError } = useQuery<AssingedTask[]>({
           queryKey: [`/api/assignedTasks/${user?.id}`],   
-         
         }); 
 
   const [, navigate] = useLocation();
@@ -66,25 +62,25 @@ function parseTimeConstraint(time: string): number {
 }
 
 useEffect(() => {
-  if (!taskProg?.startedAt || !task) return;
-  if (!task?.timeConstraint && task?.timeConstraint === "00:00:00") return;
+  if (!taskProg?.startedAt  ) return;
+  if (!taskProg.timeConstraint && taskProg.timeConstraint === "00:00:00") return;
 
   const updateTimer = () => {
-    const left = calculateTimeLeft(String(taskProg.startedAt), task.timeConstraint);
+    const left = calculateTimeLeft(String(taskProg.startedAt), String(taskProg.timeConstraint));
     setTimeLeft(left > 0 ? left : 0);
   };
 
   updateTimer(); // начальная установка
   const interval = setInterval(updateTimer, 1000);
   return () => clearInterval(interval);
-}, [taskProg?.startedAt, task]);
+}, [taskProg?.startedAt]);
 
 useEffect(() => {
-  if (task?.exercisesNumber !== exerciseProgs?.length) {
+  if (taskProg?.exercisesNumber !== exerciseProgs?.length) {
     refetch();
   }
   if (timeLeft === null || timeLeft > 0) return;
-  if (task?.timeConstraint === "00:00:00") return;
+  if (taskProg?.timeConstraint === "00:00:00") return;
   if (assignedTasks && assignedTasks?.length > 0) {
     updateAssignedTaskStatusMutation.mutate();
   }
@@ -210,7 +206,8 @@ useEffect(() => {
   };
   
   
-  if ((task?.exercisesNumber !== exerciseProgs?.length) ||isLoading ||  exerciseProgsLoading || taskProgLoading || assignedTasksLoading) {
+  if ((taskProg?.exercisesNumber !== exerciseProgs?.length) ||isLoading ||  exerciseProgsLoading || taskProgLoading || assignedTasksLoading) 
+    {refetch();
     return (
       <>
         <Navbar />
@@ -243,7 +240,7 @@ useEffect(() => {
       
       <Navbar />
       <main className="container mx-auto pt-20 pb-12 px-4">
-    {timeLeft !== null && task?.timeConstraint !== "00:00:00" && (
+    {timeLeft !== null && taskProg?.timeConstraint !== "00:00:00" && (
   <p className="text-lg text-gray-600 mb-8">
     {
       (() => {
@@ -267,14 +264,11 @@ return `${hours.toString().padStart(2, "0")}:${minutes
                   <h2 className="font-heading text-2xl font-semibold">Sentence Builder</h2>
                   <div className="flex items-center space-x-4">
                     
-                    {/* <div className="bg-white text-primary px-3 py-1 rounded-full font-medium text-sm">
-                      {exercise.grammarTopic}
-                    </div> */}
                   </div>
                 </div>
                 <div className="mt-4 flex items-center">
                   <Progress value={40} className="h-2 bg-white/20" />
-                  <span className="ml-3 text-white text-sm font-medium">{Number(parseInt(seq) + 1)}/{exerciseProgs?.length}</span>
+                  <span className="ml-3 text-white text-sm font-medium">{Number(parseInt(seq) + 1)}/{taskProg?.exercisesNumber}</span>
                 </div>
               </div>
               

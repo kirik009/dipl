@@ -208,6 +208,20 @@
             }
           });
 
-           // User progress routes
+              app.get("/api/task_prog_task_/:id", async (req, res, next) => {
+      try {
+        const id = parseInt(req.params.id);
+        
+        const taskProgress = await storage.getTaskProgress(id);
+        
+        if (!taskProgress) {
+          return res.status(404).json({ message: "Task progress not found" });
+        }
+        
+        res.json(taskProgress);
+      } catch (error) {
+        next(error);
+      }
+    });
 
 }
