@@ -2,7 +2,7 @@ import { useParams, useLocation, Link as WouterLink } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Button } from "@/components/ui/button";
-import { AssingedTask, Exercise, insertTaskProgressSchema, Task, } from "@shared/schema";
+import { AssingedTask, Exercise, insertTaskProgressSchema, Task, TaskProgress, } from "@shared/schema";
 import { CheckCircle, XCircle } from "lucide-react";
 import { Loader2 } from "lucide-react";
 import { navigate } from "wouter/use-browser-location";
@@ -18,12 +18,11 @@ export default function ExerciseResults() {
   const searchParams = new URLSearchParams(window.location.search);
   const isCorrect = searchParams.get('isCorrect') === 'true';
   const isSkipped = searchParams.get('skipped') === 'true';
- queryClient.invalidateQueries({queryKey: [`/api/task_exercises_prog/${progressId}`]});
+  const { data: taskProg, isLoading: taskProgLoading, error: taskProgError } = useQuery<TaskProgress>({
+           queryKey: [`/api/task_prog/${progressId}`], 
+         });
 
-   const [timeLeft, setTimeLeft] = useState<number | null>(() => {
-  const stored = localStorage.getItem("timeLeft");
-  return stored ? parseInt(stored, 10) : null;
-});
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
 const nextSeq = parseInt(seq) + 1;
 
@@ -65,12 +64,11 @@ const nextSeq = parseInt(seq) + 1;
    
   }); 
   
-    const  isLoading = exerciseLoading || taskLoading || nextExerciseLoading || assignedTasksLoading;
-    const error = taskError || exerciseError || exerciseError || assignedTasksError;
-    
- 
-  
+    const  isLoading = exerciseLoading || taskLoading || nextExerciseLoading || assignedTasksLoading || taskProgLoading;
+    const error = taskError || exerciseError || exerciseError || assignedTasksError || taskProgError;
+
   type FormValues = z.infer<typeof insertTaskProgressSchema>;
+
 
   const updateTaskMutation =  useMutation({
     mutationFn: async (data: FormValues) => {
@@ -78,7 +76,7 @@ const nextSeq = parseInt(seq) + 1;
       return await res.json();
     },
     onSuccess: () => {
-     
+  queryClient.invalidateQueries({queryKey: [`/api/task_prog/${progressId}`]})
       navigate(`/tasks/${taskId}/prog/${progressId}/results`)
     },
     onError: (error: Error) => {
@@ -107,25 +105,48 @@ const nextSeq = parseInt(seq) + 1;
     },
   });
 
-  useEffect(() => {
- if (timeLeft === null) return;
-    if (timeLeft <= 0) {
-      if (assignedTasks && assignedTasks?.length > 0) {
+  function parseTimeStringToMs(timeString: string): number {
+  const [hours, minutes, seconds] = timeString.split(":").map(Number);
+  return ((hours * 60 + minutes) * 60 + seconds) * 1000;
+}
+
+useEffect(() => {
+  if (!taskProg || !task) return;
+
+  const startTime = new Date(taskProg.startedAt).getTime() - (3 * 60 * 60 * 1000); // если у тебя UTC
+  const durationStr = task.timeConstraint;
+
+  if (typeof durationStr !== "string") {
+    console.error("Duration is not a string:", durationStr);
+    return;
+  }
+
+  const duration = parseTimeStringToMs(durationStr);
+  const endTime = startTime + duration;
+
+  const update = () => {
+    const now = Date.now();
+    const newTimeLeft = endTime - now;
+    setTimeLeft(newTimeLeft <= 0 ? 0 : newTimeLeft);
+  };
+
+  update();
+
+  const interval = setInterval(update, 1000);
+
+  // Очистка при размонтировании
+  return () => clearInterval(interval);
+}, [taskProg, task]);
+
+useEffect(() => {
+  if (timeLeft === null || timeLeft > 0) return;
+  if (task?.timeConstraint === "00:00:00") return;
+  if (assignedTasks && assignedTasks?.length > 0) {
     updateAssignedTaskStatusMutation.mutate();
-      }
-      updateTaskMutation.mutate( 
-        {isActive: false}
-     )
-      
-    }
-  
-    const timer = setTimeout(() => {
-      setTimeLeft(prev => (prev !== null ? prev - 1000 : null));
-    }, 1000);
-  
-    return () => clearTimeout(timer);
-  }, [timeLeft]);
-  
+  }
+  updateTaskMutation.mutate({ isActive: false });
+
+}, [timeLeft]);
   const handleComplete = () => {
     if (task && nextSeq >=  Number(task.exercisesNumber)) {
      
@@ -139,9 +160,6 @@ if (assignedTasks && assignedTasks?.length > 0) {
       
 }
  else {
-    console.log(nextExercise)
-  if (timeLeft !== null)
-  localStorage.setItem("timeLeft", String(timeLeft));
  
   if (nextExercise?.id)
   navigate(`/tasks/${taskId}/prog/${progressId}/exercises/${nextExercise?.id}/seq/${nextSeq}`)
@@ -183,7 +201,7 @@ if (assignedTasks && assignedTasks?.length > 0) {
       <Navbar />
       
       <main className="container mx-auto pt-20 pb-12 px-4">
-        {timeLeft !== null && (
+        {timeLeft !== null && task?.timeConstraint !== "00:00:00" && (
       <p className="text-lg text-gray-600 mb-8">{
 (() =>  {
   const totalSeconds = Math.floor(timeLeft / 1000); 

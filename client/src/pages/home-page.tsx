@@ -35,7 +35,8 @@ export default function HomePage() {
                   className="gap-2"
                   asChild
                 >
-                  <Link href={user ? "/exercises/1" : "/auth"}>
+                 
+                  <Link href={user ? "/tasks" : "/auth"}>
                     <GraduationCap className="w-5 h-5" />
                     Начать изучение
                   </Link>

@@ -58,7 +58,7 @@ export async function updateTaskProg(id: number, num :number| undefined, isActiv
       .limit(1);
           return progr
         } catch (error) {
-        console.error("Error getting task progress:", error);
+        console.error("Error getting last task progress:", error);
         throw new Error("Failed to get task progress");
       }
     }
@@ -86,7 +86,7 @@ export async function updateTaskProg(id: number, num :number| undefined, isActiv
       .orderBy(taskProgress.id) 
           return progr
         } catch (error) {
-        console.error("Error getting task progress:", error);
+        console.error("Error getting user task progress:", error);
         throw new Error("Failed to get task progress");
       }
     }

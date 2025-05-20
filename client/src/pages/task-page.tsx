@@ -28,6 +28,7 @@ export default function TaskPage() {
 ""
   const { data: taskProgs, isLoading: taskProgsLoading, error: taskProgsError } = useQuery<TaskProgress[]>({
     queryKey: [`/api/task_prog/${task?.id}/${user?.id}`],
+    enabled: !!task,
   });
   const submitMutation = useMutation({
     mutationFn: async () => {   
@@ -35,24 +36,25 @@ export default function TaskPage() {
         correctAnswers: 0,
         userId: Number(user?.id),
         taskId: Number(id),
+        startedAt: new Date(),
       });
       const data = await res.json();
       return data; 
     },
      onSuccess: (data) => {
       const newProgressId = data.id;
+       queryClient.invalidateQueries({queryKey: [`/api/task_prog/${newProgressId}`]});
+      
       if (exercises) {
         const exerciseId = exercises[0].id;
          if (task?.exercisesNumber){
       for (let i = 0; i < task?.exercisesNumber; i++)  {
-        submitProgressMutation.mutate({newProgressId, i});}
+        submitProgressMutation.mutate({newProgressId, i});
+      }
 
     }
-  
      queryClient.invalidateQueries({queryKey: [`/api/task_exercises_prog/${newProgressId}`]});
-        queryClient.invalidateQueries({queryKey: [`/api/task_prog/${newProgressId}`]});
-        
-        
+ 
         navigate(`${id}/prog/${newProgressId}/exercises/${exerciseId}/seq/${0}`);
         
       }
@@ -78,8 +80,7 @@ export default function TaskPage() {
     
   },
     onSuccess: (newProgressId: number) => {
-      queryClient.invalidateQueries({ queryKey: [`/api/task_exercises_prog/${newProgressId}`]});
-    },
+        },
       onError: (error: Error) => {
       toast({
         title: "Ошибка при отправке задания",
@@ -96,17 +97,10 @@ export default function TaskPage() {
       });
        return;
     }
+    
     submitMutation.mutate();
    
-    
-    const [hours, minutes, seconds] = task?.timeConstraint ? task?.timeConstraint.split(":").map(Number) : [0, 0, 0];
-    const durationMs = ((hours * 60 + minutes) * 60 + seconds) * 1000;
-    const date = task ? new Date(task?.createdAt): new Date()
-    const date2 = task ? new Date(date.getTime() - durationMs): new Date()
-    const timeLeft = task ? (date.getTime() -  date2.getTime() ) : 0;
-    if (task?.timeConstraint !== "00:00:00")
-    localStorage.setItem("timeLeft", timeLeft.toString()); 
-    else localStorage.removeItem("timeLeft");
+   
   };
 
 

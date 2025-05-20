@@ -10,17 +10,19 @@ import  WordBank  from "@/components/ui/dnd/word-bank";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Exercise, TaskProgress,insertTaskProgressSchema, ExerciseProgress, AssingedTask } from "@shared/schema";
+import { Exercise, TaskProgress,insertTaskProgressSchema, ExerciseProgress, AssingedTask, Task } from "@shared/schema";
 import { Loader2, RefreshCw } from "lucide-react";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 export default function ExercisePage() {
   const { user } = useAuth();
   const { taskId, progressId, exerciseId, seq } = useParams<{taskId : string, progressId: string, exerciseId: string, seq: string}>();
-      
+   
+  const { data: task, isLoading: taskLoading, error: taskError } = useQuery<Task>({
+        queryKey: [`/api/tasks/${taskId}`],
+      });
   const { data: taskProg, isLoading: taskProgLoading, error: taskProgError } = useQuery<TaskProgress>({
-          queryKey: [`/api/task_prog/${progressId}`],
-        
+          queryKey: [`/api/task_prog/${progressId}`], 
         });
   const { data: exercise, isLoading, error } = useQuery<Exercise>({
     queryKey: [`/api/exercises/${exerciseId}`],
@@ -34,8 +36,11 @@ export default function ExercisePage() {
           if (!response.ok) throw new Error("Failed to fetch exercises progress");
           return response.json();
         },
+        staleTime: 0,
+        refetchOnMount: true,
+refetchOnWindowFocus: true,
       });
-
+console.log(exerciseProgs)
        const { data: assignedTasks, isLoading: assignedTasksLoading, error: assignedTasksError } = useQuery<AssingedTask[]>({
           queryKey: [`/api/assignedTasks/${user?.id}`],   
          
@@ -48,10 +53,37 @@ export default function ExercisePage() {
   const [wordBank, setWordBank] = useState<WordItem[]>([]);
   const [sentence, setSentence] = useState<WordItem[]>([]);
 
-  const [timeLeft, setTimeLeft] = useState<number | null>(() => {
-  const stored = localStorage.getItem("timeLeft");
-  return stored ? parseInt(stored, 10) : null;
-});
+function calculateTimeLeft(startedAtRaw: string, timeConstraint: string): number {
+  
+  const startTime = new Date(startedAtRaw).getTime() - (3 * 60 * 60 * 1000);
+  const duration = parseTimeConstraint(timeConstraint); 
+  const now = Date.now();
+
+  return startTime + duration - now;
+}
+
+const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+function parseTimeConstraint(time: string): number {
+ 
+  const [hours, minutes, seconds] = time.split(":").map(Number);
+
+  return ((hours * 60 + minutes) * 60 + seconds) * 1000; // в миллисекундах
+}
+
+useEffect(() => {
+  if (!taskProg?.startedAt || !task) return;
+  if (!task?.timeConstraint && task?.timeConstraint === "00:00:00") return;
+
+  const updateTimer = () => {
+    const left = calculateTimeLeft(String(taskProg.startedAt), task.timeConstraint);
+    setTimeLeft(left > 0 ? left : 0);
+  };
+
+  updateTimer(); // начальная установка
+  const interval = setInterval(updateTimer, 1000);
+  return () => clearInterval(interval);
+}, [taskProg?.startedAt, task]);
 
    type FormValues = z.infer<typeof insertTaskProgressSchema>;
   
@@ -61,7 +93,7 @@ export default function ExercisePage() {
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({queryKey: [`/api/task_exercises_prog/${progressId}`]})
+      queryClient.invalidateQueries({queryKey: [`/api/task_prog/${progressId}`]})
       
     },
   });
@@ -83,24 +115,17 @@ export default function ExercisePage() {
     });
 
 useEffect(() => {
-if (timeLeft === null) return;
-      if (timeLeft <= 0) {
-        if (assignedTasks && assignedTasks?.length > 0) {
-        updateAssignedTaskStatusMutation.mutate();
-        }
-        updateTaskMutation.mutate( 
-        
-          {isActive: false}
-       )
-        navigate(`/tasks/${taskId}/prog/${progressId}/results`)
-      }
-    
-      const timer = setTimeout(() => {
-        setTimeLeft(prev => (prev !== null ? prev - 1000 : null));
-      }, 1000);
-    
-      return () => clearTimeout(timer);
-    }, [timeLeft]);
+  if (timeLeft === null || timeLeft > 0) return;
+  if (task?.timeConstraint === "00:00:00") return;
+  if (assignedTasks && assignedTasks?.length > 0) {
+    updateAssignedTaskStatusMutation.mutate();
+  }
+
+  
+  updateTaskMutation.mutate({ isActive: false });
+// 
+  navigate(`/tasks/${taskId}/prog/${progressId}/results`);
+}, [timeLeft]);
     
 
    
@@ -167,7 +192,6 @@ if (timeLeft === null) return;
       setSentence([]);
     }
   };
-  
   // Check answer
   const handleCheckAnswer = () => {
     if (sentence.length === 0) {
@@ -183,7 +207,6 @@ if (timeLeft === null) return;
     if (timeLeft !== null) {
       
     
-    localStorage.setItem("timeLeft", timeLeft.toString());
     }
   };
   
@@ -221,17 +244,18 @@ if (timeLeft === null) return;
       
       <Navbar />
       <main className="container mx-auto pt-20 pb-12 px-4">
-    {timeLeft !== null && (
+    {timeLeft !== null && task?.timeConstraint !== "00:00:00" && (
   <p className="text-lg text-gray-600 mb-8">
     {
       (() => {
+        
         const totalSeconds = Math.floor(timeLeft / 1000);
-        const hours = Math.floor(totalSeconds / 3600);
-        const minutes = Math.floor((totalSeconds % 3600) / 60);
-        const seconds = totalSeconds % 60;
-        return `${hours.toString().padStart(2, "0")}:${minutes
-          .toString()
-          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+const hours = Math.floor(totalSeconds / 3600);
+const minutes = Math.floor((totalSeconds % 3600) / 60);
+const seconds = totalSeconds % 60;
+return `${hours.toString().padStart(2, "0")}:${minutes
+  .toString()
+  .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
       })()
     }
   </p>

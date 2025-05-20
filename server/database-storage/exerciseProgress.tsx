@@ -50,7 +50,7 @@ export async function getTaskExerciseProgs(taskProgId?: number): Promise<({corre
       .orderBy(desc(exerciseProgress.id)) // или desc(taskProgress.createdAt), если есть createdAt;
           return progr[seq]
         } catch (error) {
-        console.error("Error getting task progress:", error);
+        console.error("Error getting exercise progress:", error);
         throw new Error("Failed to get task progress");
       }
     }
