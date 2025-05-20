@@ -11,7 +11,7 @@
 - [ExpressJS](https://expressjs.com/)
 - [TypeScript](https://www.typescriptlang.org/)
 - [React](https://react.dev/)
-- [PostgreSQL]((https://www.postgresql.org/)
+- [PostgreSQL](https://www.postgresql.org/)
 ## Использование
 
 # Установка зависимостей
