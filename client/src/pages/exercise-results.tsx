@@ -17,7 +17,7 @@ export default function ExerciseResults() {
   const {user} = useAuth()
   const searchParams = new URLSearchParams(window.location.search);
   const isCorrect = searchParams.get('isCorrect') === 'true';
-  const isSkipped = searchParams.get('skipped') === 'true';
+ 
   const { data: taskProg, isLoading: taskProgLoading, error: taskProgError } = useQuery<TaskProgress>({
            queryKey: [`/api/task_prog/${progressId}`], 
          });
@@ -55,8 +55,6 @@ const nextSeq = parseInt(seq) + 1;
         if (!response.ok) throw new Error("Failed to fetch this exercises");
         return response.json();
       },
-     
-   
   }); 
   
  const { data: assignedTasks, isLoading: assignedTasksLoading, error: assignedTasksError } = useQuery<AssingedTask[]>({
@@ -215,16 +213,7 @@ if (assignedTasks && assignedTasks?.length > 0) {
         <div className="py-16">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              {isSkipped ? (
-                <div className="bg-amber-500 p-6 text-white">
-                  <div className="flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mr-3" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                    <h3 className="font-heading text-2xl font-semibold">Пропущено</h3>
-                  </div>
-                </div>
-              ) : isCorrect ? (
+              {isCorrect ? (
                 <div className="bg-green-500 p-6 text-white">
                   <div className="flex items-center">
                     <CheckCircle className="h-8 w-8 mr-3" />
@@ -242,7 +231,7 @@ if (assignedTasks && assignedTasks?.length > 0) {
               
               <div className="p-6">
                 <div className="mb-6">
-                  <h4 className="font-medium text-gray-700 mb-2">Correct answer:</h4>
+                  <h4 className="font-medium text-gray-700 mb-2">Правильный ответ:</h4>
                   <p className="p-3 bg-gray-50 rounded text-gray-800">{exercise?.correctSentence}</p>
                 </div>
                 

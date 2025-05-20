@@ -32,11 +32,6 @@ export default function ExercisePage() {
   const { data: exerciseProgs, isLoading: exerciseProgsLoading, error: exerciseProgsError, refetch} =
       useQuery<ExerciseProgress[]>({
         queryKey: [`/api/task_exercises_prog/${progressId}`],
-        queryFn: async () => {
-          const response = await fetch(`/api/task_exercises_prog/${progressId}`);
-          if (!response.ok) throw new Error("Failed to fetch exercises progress");
-          return response.json();
-        },
        
       });
 
@@ -67,7 +62,7 @@ function parseTimeConstraint(time: string): number {
  
   const [hours, minutes, seconds] = time.split(":").map(Number);
 
-  return ((hours * 60 + minutes) * 60 + seconds) * 1000; // в миллисекундах
+  return ((hours * 60 + minutes) * 60 + seconds) * 1000; 
 }
 
 useEffect(() => {
@@ -83,6 +78,22 @@ useEffect(() => {
   const interval = setInterval(updateTimer, 1000);
   return () => clearInterval(interval);
 }, [taskProg?.startedAt, task]);
+
+useEffect(() => {
+  if (task?.exercisesNumber !== exerciseProgs?.length) {
+    refetch();
+  }
+  if (timeLeft === null || timeLeft > 0) return;
+  if (task?.timeConstraint === "00:00:00") return;
+  if (assignedTasks && assignedTasks?.length > 0) {
+    updateAssignedTaskStatusMutation.mutate();
+  }
+
+  updateTaskMutation.mutate({ isActive: false });
+ 
+  navigate(`/tasks/${taskId}/prog/${progressId}/results`);
+}, [timeLeft]);
+
 
    type FormValues = z.infer<typeof insertTaskProgressSchema>;
   
@@ -113,21 +124,7 @@ useEffect(() => {
       },
     });
 
-useEffect(() => {
-  if (task?.exercisesNumber !== exerciseProgs?.length) {
-    refetch();
-  }
-  if (timeLeft === null || timeLeft > 0) return;
-  if (task?.timeConstraint === "00:00:00") return;
-  if (assignedTasks && assignedTasks?.length > 0) {
-    updateAssignedTaskStatusMutation.mutate();
-  }
 
-  
-  updateTaskMutation.mutate({ isActive: false });
-// 
-  navigate(`/tasks/${taskId}/prog/${progressId}/results`);
-}, [timeLeft]);
     
 
    

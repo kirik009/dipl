@@ -1,7 +1,6 @@
 import { db } from "../db"; // путь к твоей drizzle-инстанции
-import { assignedTasks, taskProgress, tasks } from "../../shared/schema"; // таблица assignedTasks
+import { taskProgress, tasks } from "../../shared/schema"; // таблица assignedTasks
 import { eq, and } from "drizzle-orm";
-import { parse } from "path";
 import cron from "node-cron";
 // Парсинг строки "HH:mm:ss" в миллисекунды
 function parseTimeStringToMs(timeString: string): number {
