@@ -47,7 +47,7 @@ export default function TaskEditor() {
     enabled: isEditing,
   }) : 
   useQuery<Exercise[]>({
-    queryKey: [`/api/new_task_exercises`]
+    queryKey: [`/api/new_task_exercises/${user?.id}`],
   });
  
   const { data: task, isLoading: isLoadingTask, error: taskError } = useQuery<Task>({
@@ -55,9 +55,6 @@ export default function TaskEditor() {
     enabled: isEditing,
   });
 
-  const { data: newTask, isLoading: isLoadingNewTask, error: newTaskError } = useQuery<Task>({
-    queryKey: [`/api/newTask/${user?.id}`],
-  });
 
   const { data: allTasks, isLoading: tasksLoading, error: tasksError } = useQuery<Task[]>({
   queryKey: ["/api/tasks"],
@@ -214,7 +211,7 @@ localStorage.removeItem(`taskForm-${id ?? "new"}`);
       }, 0);
     }
   };
-  if (isLoading || isLoadingExercise || isLoadingNewTask || tasksLoading) {
+  if (isLoading || isLoadingExercise || tasksLoading) {
     return (
       <div className="flex justify-center items-center py-12">
         <Loader2 className="h-10 w-10 animate-spin text-primary" />

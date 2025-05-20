@@ -10,6 +10,7 @@ import {  useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { useLocation } from "wouter";
 import { ConsoleLogWriter } from "drizzle-orm";
+import { useAuth } from "./use-auth";
 
 type TaskFormValues = z.infer<typeof insertTaskSchema>;
 
@@ -52,14 +53,14 @@ type UserWithoutPassword = Omit<User, 'password'>;
       export function useDeleteExerciseMutation(id: string, isEditing: boolean, onSuccessCallback?: () => void ) {
         const [, navigate] = useLocation();
         const { toast } = useToast();
-
+        const {user} = useAuth()
         return useMutation({
             mutationFn: async (exerciseId: number) => {
               await apiRequest("DELETE", `/api/exercises/${exerciseId}`);
             },
             onSuccess: () => {
               queryClient.invalidateQueries({
-                queryKey: [isEditing ? `/api/task_exercises/${id}` : `/api/new_task_exercises`],
+                queryKey: [isEditing ? `/api/task_exercises/${id}` : `/api/new_task_exercises/${user?.id}`],
               });
               toast({
                 title: "Операция выполнена",
@@ -107,6 +108,7 @@ type UserWithoutPassword = Omit<User, 'password'>;
 
       export function useCreateExerciseMutation(task_id: string) {
         const { toast } = useToast();
+        const {user} = useAuth()
         return useMutation({
             mutationFn: async (data: Omit<ExerciseFormValues, "newWord">) => {
               data.task_id = Number(task_id)
@@ -116,7 +118,7 @@ type UserWithoutPassword = Omit<User, 'password'>;
             },
             onSuccess: () => {
               queryClient.invalidateQueries({queryKey: [`/api/task_exercises/${task_id}`]});
-              queryClient.invalidateQueries({queryKey: [`/api/new_task_exercises`]});
+              queryClient.invalidateQueries({queryKey: [`/api/new_task_exercises/${user?.id}`]});
               toast({
                 title: "Операция выполнена",
                 description: "Предложение успешно создано.",
@@ -210,12 +212,13 @@ type UserWithoutPassword = Omit<User, 'password'>;
 
 
       export function useDeleteExercisesMutation() {
+        const {user} = useAuth();
         return useMutation({
           mutationFn: async () => {
             await apiRequest("DELETE", `/api/exercises`);
           },
           onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: [`/api/new_task_exercises`] });
+              queryClient.invalidateQueries({ queryKey: [`/api/new_task_exercises/${user?.id}`] });
           }
         });
       }

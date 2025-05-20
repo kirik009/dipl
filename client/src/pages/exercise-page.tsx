@@ -146,7 +146,7 @@ useEffect(() => {
       const userAnswer = sentence.map(w => w.text).join(" ").toLowerCase().trim();
      const correctAnswer = exercise?.correctSentence.replace(/[!?.]/g, "").toLowerCase().trim();
      if (exerciseProgs) {
-     console.log(exerciseProgs)
+    
       const res = await apiRequest("PATCH", `/api/exerciseProg/${exerciseProgs[Number(seq)]?.id}`, {
         // exerciseId: parseInt(exerciseId),
         isCorrect: userAnswer === correctAnswer,

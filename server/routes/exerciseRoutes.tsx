@@ -65,10 +65,10 @@ export async function exerciseRoutes(app: Express) {
 
 
 
-      app.get("/api/new_task_exercises", async (req, res, next) => {
+      app.get("/api/new_task_exercises/:userId", async (req, res, next) => {
         try {
-        
-          const exercises = await storage.getNewTaskExercises();
+          const userId = parseInt(req.params.userId);
+          const exercises = await storage.getNewTaskExercises(userId);
           
           if (!exercises ) {
             return res.status(404).json({ message: "Exercises for this task not found" });

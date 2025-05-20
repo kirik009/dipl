@@ -23,7 +23,7 @@ export async function getTaskExerciseProgs(taskProgId?: number): Promise<({corre
       
       return [];
     } catch (error) {
-      console.error("Error getting exercise progs:", error);
+      console.error("Error getting task exercise progs:", error);
       throw new Error("Failed to get exercise progs");
     }
   }
@@ -36,7 +36,7 @@ export async function getTaskExerciseProgs(taskProgId?: number): Promise<({corre
           .where(eq(exerciseProgress.userId, userId))
           .orderBy(desc(exerciseProgress.completedAt));
       } catch (error) {
-        console.error("Error getting user progress:", error);
+        console.error("Error getting exercise progress:", error);
         return [];
       }
     }
@@ -50,7 +50,7 @@ export async function getTaskExerciseProgs(taskProgId?: number): Promise<({corre
       .orderBy(desc(exerciseProgress.id)) // или desc(taskProgress.createdAt), если есть createdAt;
           return progr[seq]
         } catch (error) {
-        console.error("Error getting exercise progress:", error);
+        console.error("Error getting last exercise progress of this user:", error);
         throw new Error("Failed to get task progress");
       }
     }
@@ -88,7 +88,7 @@ export async function getTaskExerciseProgs(taskProgId?: number): Promise<({corre
          
          return updatedTask;
        } catch (error) {
-         console.error("Error updating task:", error);
+         console.error("Error updating exercise progress:", error);
          return undefined;
        }
      }

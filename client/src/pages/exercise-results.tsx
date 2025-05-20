@@ -74,7 +74,7 @@ const nextSeq = parseInt(seq) + 1;
       return await res.json();
     },
     onSuccess: () => {
-  queryClient.invalidateQueries({queryKey: [`/api/task_prog/${progressId}`]})
+    queryClient.invalidateQueries({queryKey: [`/api/task_prog/${progressId}`]})
       navigate(`/tasks/${taskId}/prog/${progressId}/results`)
     },
     onError: (error: Error) => {
@@ -113,11 +113,6 @@ useEffect(() => {
 
   const startTime = new Date(taskProg.startedAt).getTime() - (3 * 60 * 60 * 1000); // если у тебя UTC
   const durationStr = task.timeConstraint;
-
-  if (typeof durationStr !== "string") {
-    console.error("Duration is not a string:", durationStr);
-    return;
-  }
 
   const duration = parseTimeStringToMs(durationStr);
   const endTime = startTime + duration;

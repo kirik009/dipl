@@ -1,5 +1,5 @@
 import { eq, Exercise, exercises, InsertExercise } from "@shared/schema";
-import { isNull, or } from "drizzle-orm";
+import { and, isNull, or } from "drizzle-orm";
 import { db } from "server/db";
 
  export async function getExercise(id: number): Promise<Exercise | undefined> {
@@ -71,7 +71,7 @@ import { db } from "server/db";
               try {
                 await db.delete(exercises).where(isNull(exercises.task_id));
               } catch (error) {
-                console.error("Error deleting exercise:", error);
+                console.error("Error deleting exercises:", error);
                 throw new Error("Failed to delete exercise");
               }
             }
@@ -88,7 +88,7 @@ import { db } from "server/db";
           
                 return [exer][0];
               } catch (error) {
-                console.error("Error getting exercises:", error);
+                console.error("Error getting task exercise:", error);
                 throw new Error("Failed to get exercises");
               }
             }
@@ -132,13 +132,14 @@ import { db } from "server/db";
                 }
               }
 
-               export async function getNewTaskExercises(): Promise<Exercise[]> {
+               export async function getNewTaskExercises(userId: number): Promise<Exercise[]> {
                   try {   
                       const exers = await db
                         .select()
                         .from(exercises)
-                        .where(   
-                            isNull(exercises.task_id)
+                        .where( and( eq(exercises.createdBy, userId),  
+                            isNull(exercises.task_id)) 
+                           
                         );
                       return exers;
                   
