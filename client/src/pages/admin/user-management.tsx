@@ -61,7 +61,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
   const { data: assignedTasks, isLoading: assignedLoading } = useQuery<(AssingedTask & { taskName: string | null } & {authorName: string | null })[]>(
   {
-    queryKey: [`/api/assignedTasks/${userToAddTask?.id}`],
+    queryKey: [`/api/assignedTasks/${Number(userToAddTask?.id || 0) }`],
  
   }
 );
@@ -106,16 +106,6 @@ const queries = assignedSolvedTasks?.map((task) => ({
     // const updateAssignedTaskMutation = useUpdateAssignedTaskMutation();
     const deleteAssignedTaskMutation = useDeleteAssignedTaskMutation();
     
-//     const handleUpdateAssignedTask = (assignmentId: number, updatedData: { dueDate?: Date }) => {
-//   updateAssignedTaskMutation.mutate({
-//     id: assignmentId,
-//     ...updatedData,
-//   },
-// {onSuccess: () => {
- 
-//   queryClient.invalidateQueries({ queryKey: [`/api/assignedTasks/${userToAddTask?.id}`] });}}
-// );
-// };
 
 
     const handleAssign = (e: React.FormEvent) => {

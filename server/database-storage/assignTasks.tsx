@@ -24,7 +24,7 @@ import { db } from "server/db";
 
       return elements;
     } catch (error) {
-      console.error("Error getting assigned exercises:", error);
+      console.error("Error getting assigned tasks:", error);
       return [];
     }
   }
@@ -50,7 +50,7 @@ import { db } from "server/db";
 
       return elements;
     } catch (error) {
-      console.error("Error getting assigned exercises:", error);
+      console.error("Error getting assigned expired tasks:", error);
       return [];
     }
   }
@@ -76,7 +76,7 @@ import { db } from "server/db";
 
       return elements;
     } catch (error) {
-      console.error("Error getting assigned exercises:", error);
+      console.error("Error getting assigned solved exercises:", error);
       return [];
     }
   }
