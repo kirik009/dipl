@@ -105,12 +105,14 @@ import { db } from "server/db";
         }
       }
 
-    export async function solvAssignedTask(taskId: number ): Promise<AssingedTask | undefined> {
+    export async function solvAssignedTask(taskId: number, userId: number ): Promise<AssingedTask | undefined> {
         try {
           const [updatedExercise] = await db
             .update(assignedTasks)
             .set({status: "solved"})
-            .where(eq(assignedTasks.taskId, taskId))
+            .where(and(
+               eq(assignedTasks.userId, userId),
+              eq(assignedTasks.taskId, taskId)))
             .returning();
           
           return updatedExercise;

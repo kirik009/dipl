@@ -17,9 +17,7 @@ import { useAuth } from "@/hooks/use-auth";
 export default function ExercisePage() {
   const { user } = useAuth();
   const { taskId, progressId, exerciseId, seq } = useParams<{taskId : string, progressId: string, exerciseId: string, seq: string}>();
-   
-
-      
+    
   const { data: taskProg, isLoading: taskProgLoading, error: taskProgError } = useQuery<{exercisesNumber: number | null} &{timeConstraint: string | null} & TaskProgress>({
           queryKey: [`/api/task_prog/${progressId}`], 
         });
@@ -105,7 +103,7 @@ useEffect(() => {
   });
       const updateAssignedTaskStatusMutation =  useMutation({
       mutationFn: async () => {
-        const res = await apiRequest("PATCH", `/api/assignedTasks/${taskId}`);
+        const res = await apiRequest("PATCH", `/api/assignedTasks/${taskId}/${user?.id}`);
         return await res.json();
       },
       onSuccess: () => {

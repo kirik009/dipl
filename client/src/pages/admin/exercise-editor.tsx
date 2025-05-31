@@ -29,38 +29,39 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { X, Plus, Loader2, ArrowLeft } from "lucide-react";
-import * as pdfjsLib from 'pdfjs-dist';
-import { useCreateExerciseMutation, useUpdateExerciseMutation } from "@/hooks/use-mutate";
+import * as pdfjsLib from "pdfjs-dist";
+import {
+  useCreateExerciseMutation,
+  useUpdateExerciseMutation,
+} from "@/hooks/use-mutate";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
+  "pdfjs-dist/build/pdf.worker.min.mjs",
   import.meta.url
 ).toString();
 
 const formSchema = insertExerciseSchema.extend({
-  newWord: z.string().optional()
- 
+  newWord: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 export default function ExerciseEditor() {
-  const { task_id, id } = useParams<{ task_id: string, id: string }>();
+  const { task_id, id } = useParams<{ task_id: string; id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [wordInput, setWordInput] = useState("");
   const [tagInput, setTagInput] = useState("");
   const isEditing = !!id && id !== "new";
-  
+
   // Fetch exercise if editing
   const { data: exercise, isLoading: isLoadingExercise } = useQuery<Exercise>({
     queryKey: [`/api/exercises/${id}`],
     enabled: isEditing,
   });
-  
+
   // Fetch grammar topics
-  
-  
+
   // Form definition
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -71,9 +72,9 @@ export default function ExerciseEditor() {
       grammarExplanation: "",
       newWord: "",
       task_id: null,
-    }
+    },
   });
-  
+
   // Update form values when exercise data is loaded
   useEffect(() => {
     if (exercise) {
@@ -83,70 +84,73 @@ export default function ExerciseEditor() {
       });
     }
   }, [exercise, form]);
-  
+
   // Create exercise mutation
-  const createExerciseMutation = useCreateExerciseMutation(task_id)
-  
+  const createExerciseMutation = useCreateExerciseMutation(task_id);
+
   // Update exercise mutation
   const updateExerciseMutation = useUpdateExerciseMutation(id, task_id);
-  
+
   // Handle adding a word
   const handleAddWord = () => {
     if (!wordInput.trim()) return;
-    
+
     const currentWords = form.getValues("words") || [];
     form.setValue("words", [...currentWords, wordInput.trim()]);
     setWordInput("");
   };
-  
+
   // Handle removing a word
   const handleRemoveWord = (word: string) => {
     const currentWords = form.getValues("words") || [];
-    form.setValue("words", currentWords.filter(w => w !== word));
+    form.setValue(
+      "words",
+      currentWords.filter((w) => w !== word)
+    );
   };
-  
 
-
-  
   // Handle form submission
   const onSubmit = (values: FormValues) => {
     // Remove the extra fields we added for UI purposes
     const { newWord, ...exerciseData } = values;
-    
+
     if (isEditing) {
       updateExerciseMutation.mutate(exerciseData);
     } else {
       createExerciseMutation.mutate(exerciseData);
     }
   };
-  
+
   const isLoading = isLoadingExercise;
-  
+
   const extractTextFromPdf = async (arrayBuffer: ArrayBuffer) => {
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
     let fullText = "";
-  
+
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
       const strings = content.items.map((item: any) => item.str);
       fullText += strings.join(" ") + "\n";
     }
-    
+
     return fullText;
   };
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, formName: "translation" | 'correctSentence') => {
+  const handleFileUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    formName: "translation" | "correctSentence"
+  ) => {
     const file = e.target.files?.[0];
     if (!file) return;
-  
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-  
+
+    const fileExtension = file.name.split(".").pop()?.toLowerCase();
+
     try {
       let text = "";
-  
+
       if (fileExtension === "pdf") {
         const arrayBuffer = await file.arrayBuffer();
-        
+
         text = await extractTextFromPdf(arrayBuffer);
       } else if (fileExtension === "docx") {
         const arrayBuffer = await file.arrayBuffer();
@@ -162,10 +166,10 @@ export default function ExerciseEditor() {
         });
         return;
       }
-      
+
       // Trim and set the translation
       form.setValue(formName, text.trim());
-      
+
       if (formName == "correctSentence") {
         const words = text.trim().toLowerCase().split(" ");
         form.setValue("words", words);
@@ -178,7 +182,7 @@ export default function ExerciseEditor() {
       });
     }
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -186,11 +190,16 @@ export default function ExerciseEditor() {
       </div>
     );
   }
-  
+
   return (
     <div>
       <div className="bg-gray-100 px-6 py-4 flex items-center border-b border-gray-200">
-        <Button variant="ghost" size="sm" onClick={() => window.history.back()} className="mr-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => window.history.back()}
+          className="mr-4"
+        >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Назад
         </Button>
@@ -198,15 +207,19 @@ export default function ExerciseEditor() {
           {isEditing ? "Редактирование предложения" : "Создание предложения"}
         </h2>
       </div>
-      
+
       <div className="p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-           
-
             <div className="mb-4">
-              <FormLabel>Можно задать перевод файлом (.pdf, .docx, .txt)</FormLabel>
-              <Input type="file" accept=".pdf,.docx,.txt" onChange={(e) => handleFileUpload(e, "translation")} />
+              <FormLabel>
+                Можно задать перевод файлом (.pdf, .docx, .txt)
+              </FormLabel>
+              <Input
+                type="file"
+                accept=".pdf,.docx,.txt"
+                onChange={(e) => handleFileUpload(e, "translation")}
+              />
             </div>
             <FormField
               control={form.control}
@@ -215,17 +228,24 @@ export default function ExerciseEditor() {
                 <FormItem>
                   <FormLabel>Перевод на русский</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Введите перевод предложения на русский язык" />
+                    <Input
+                      {...field}
+                      placeholder="Введите перевод предложения на русский язык"
+                    />
                   </FormControl>
-                 
-                  
                 </FormItem>
               )}
             />
 
-               <div className="mb-4">
-              <FormLabel>Можно задать предложение файлом (.pdf, .docx, .txt)</FormLabel>
-              <Input type="file" accept=".pdf,.docx,.txt" onChange={(e) => handleFileUpload(e, "correctSentence")} />
+            <div className="mb-4">
+              <FormLabel>
+                Можно задать предложение файлом (.pdf, .docx, .txt)
+              </FormLabel>
+              <Input
+                type="file"
+                accept=".pdf,.docx,.txt"
+                onChange={(e) => handleFileUpload(e, "correctSentence")}
+              />
             </div>
             <FormField
               control={form.control}
@@ -234,19 +254,24 @@ export default function ExerciseEditor() {
                 <FormItem>
                   <FormLabel>Предложение на английском</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="Введите предложение на английском языке" />
+                    <Input
+                      {...field}
+                      placeholder="Введите предложение на английском языке"
+                    />
                   </FormControl>
-                
                 </FormItem>
               )}
             />
-            
+
             <div>
               <FormLabel>Words for Exercise</FormLabel>
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex flex-wrap gap-2 mb-4">
                   {form.watch("words")?.map((word, index) => (
-                    <div key={index} className="bg-white px-3 py-2 rounded shadow-sm flex items-center">
+                    <div
+                      key={index}
+                      className="bg-white px-3 py-2 rounded shadow-sm flex items-center"
+                    >
                       {word}
                       <button
                         type="button"
@@ -258,7 +283,7 @@ export default function ExerciseEditor() {
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="flex">
                   <Input
                     value={wordInput}
@@ -266,8 +291,8 @@ export default function ExerciseEditor() {
                     placeholder="Добавьте слова..."
                     className="rounded-r-none"
                   />
-                  <Button 
-                    type="button" 
+                  <Button
+                    type="button"
                     onClick={handleAddWord}
                     className="rounded-l-none"
                   >
@@ -281,7 +306,7 @@ export default function ExerciseEditor() {
                 </p>
               )}
             </div>
-            
+
             <FormField
               control={form.control}
               name="grammarExplanation"
@@ -289,17 +314,17 @@ export default function ExerciseEditor() {
                 <FormItem>
                   <FormLabel>Пояснение</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      {...field} 
+                    <Textarea
+                      {...field}
                       placeholder="Дополните упражнение пояснением, которое будет предоставлено после предоставления ответа"
                       rows={4}
-                      value= {field.value ?? ""} 
+                      value={field.value ?? ""}
                     />
                   </FormControl>
                 </FormItem>
               )}
             />
-            
+
             <div className="flex justify-end">
               <Button
                 type="button"
@@ -311,9 +336,13 @@ export default function ExerciseEditor() {
               </Button>
               <Button
                 type="submit"
-                disabled={createExerciseMutation.isPending || updateExerciseMutation.isPending}
+                disabled={
+                  createExerciseMutation.isPending ||
+                  updateExerciseMutation.isPending
+                }
               >
-                {createExerciseMutation.isPending || updateExerciseMutation.isPending
+                {createExerciseMutation.isPending ||
+                updateExerciseMutation.isPending
                   ? "Сохранение..."
                   : isEditing
                   ? "Обновить предложение"

@@ -3,7 +3,7 @@ import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
 import { storage } from "./storage";
-import { User as SelectUser, insertUserSchema, loginUserSchema, registerUserSchema } from "@shared/schema";
+import { User as SelectUser, insertUserSchema, registerUserSchema } from "@shared/schema";
 import createMemoryStore from "memorystore";
 import { z } from "zod";
 import * as crypto from "crypto";
@@ -15,7 +15,6 @@ declare global {
     interface User extends SelectUser {}
   }
 }
-
 function hashPassword(password: string) {
   
   return crypto.createHash("sha256").update(password).digest("hex");;

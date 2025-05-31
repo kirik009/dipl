@@ -1,4 +1,11 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  timestamp,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { eq, and, desc } from "drizzle-orm";
@@ -14,7 +21,6 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
   role: text("role").notNull().default("user"),
-  
 });
 
 export const exercises = pgTable("exercises", {
@@ -35,26 +41,30 @@ export const assignedTasks = pgTable("assigned_tasks", {
   assignedBy: integer("assigned_by").references(() => users.id),
   dueDate: timestamp("due_date"),
   assignedAt: timestamp("assigned_at").defaultNow(),
-  status: text("status").default('pending'),
+  status: text("status").default("pending"),
 });
 
 export const exerciseProgress = pgTable("exercise_progress", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id).notNull(),
+  userId: integer("user_id")
+    .references(() => users.id)
+    .notNull(),
   exerciseId: integer("exercise_id").references(() => exercises.id),
   isCorrect: boolean("is_correct"),
   userAnswer: text("user_answer"),
   completedAt: timestamp("completed_at"),
-  taskProgressId: integer("task_progress_id").references(() => taskProgress.id).notNull(),
+  taskProgressId: integer("task_progress_id")
+    .references(() => taskProgress.id)
+    .notNull(),
 });
-
-
 
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   name: text("name").notNull().unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdBy: integer("created_by")
+    .references(() => users.id)
+    .notNull(),
   triesNumber: integer("tries_number").notNull(),
   exercisesNumber: integer("exercises_number"),
   timeConstraint: text("time_constraint").notNull(),
@@ -105,7 +115,9 @@ export const insertTaskSchema = createInsertSchema(tasks).pick({
   exercisesNumber: true,
 });
 
-export const insertExerciseProgressSchema = createInsertSchema(exerciseProgress).pick({
+export const insertExerciseProgressSchema = createInsertSchema(
+  exerciseProgress
+).pick({
   userId: true,
   exerciseId: true,
   isCorrect: true,
@@ -114,8 +126,9 @@ export const insertExerciseProgressSchema = createInsertSchema(exerciseProgress)
   taskProgressId: true,
 });
 
-export const updateExerciseProgressSchema = createInsertSchema(exerciseProgress).pick({
-  
+export const updateExerciseProgressSchema = createInsertSchema(
+  exerciseProgress
+).pick({
   exerciseId: true,
   isCorrect: true,
   userAnswer: true,
@@ -130,7 +143,6 @@ export const insertTaskProgressSchema = createInsertSchema(taskProgress).pick({
   completedAt: true,
   isActive: true,
 });
-
 
 // Zod enhanced schemas
 export const registerUserSchema = insertUserSchema
@@ -167,8 +179,12 @@ export type AssingedTask = typeof assignedTasks.$inferSelect;
 export type InsertAssignedTask = z.infer<typeof insertAssignedTaskSchema>;
 
 export type ExerciseProgress = typeof exerciseProgress.$inferSelect;
-export type InsertExerciseProgress = z.infer<typeof insertExerciseProgressSchema>;
-export type UpdateExerciseProgress = z.infer<typeof updateExerciseProgressSchema>;
+export type InsertExerciseProgress = z.infer<
+  typeof insertExerciseProgressSchema
+>;
+export type UpdateExerciseProgress = z.infer<
+  typeof updateExerciseProgressSchema
+>;
 
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;

@@ -22,21 +22,35 @@ function Router() {
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
-      <ProtectedRoute path="/tasks/:taskId/prog/:progressId/exercises/:exerciseId/seq/:seq" component={ExercisePage} />
+      <ProtectedRoute
+        path="/tasks/:taskId/prog/:progressId/exercises/:exerciseId/seq/:seq"
+        component={ExercisePage}
+      />
       <ProtectedRoute path="/tasks" component={TasksPage} />
       <ProtectedRoute path="/tasks/:id" component={TaskPage} />
-      <ProtectedRoute path="/tasks/:taskId/prog/:progressId/exercises/:exerciseId/seq/:seq/results" component={ExerciseResults} />
-      <ProtectedRoute path="/tasks/:taskId/prog/:progressId/results" component={TaskResults} />
+      <ProtectedRoute
+        path="/tasks/:taskId/prog/:progressId/exercises/:exerciseId/seq/:seq/results"
+        component={ExerciseResults}
+      />
+      <ProtectedRoute
+        path="/tasks/:taskId/prog/:progressId/results"
+        component={TaskResults}
+      />
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <ProtectedRoute path="/admin" component={AdminDashboard} />
       <ProtectedRoute path="/admin/users" component={AdminDashboard} />
-      
-      <ProtectedRoute path="/admin/tasks/:task_id/exercises/new" component={AdminDashboard} />
+
+      <ProtectedRoute
+        path="/admin/tasks/:task_id/exercises/new"
+        component={AdminDashboard}
+      />
       <ProtectedRoute path="/admin/tasks" component={AdminDashboard} />
       <ProtectedRoute path="/admin/tasks/new" component={AdminDashboard} />
-      <ProtectedRoute path="/admin/tasks/:task_id/exercises/:id/edit" component={AdminDashboard} />
+      <ProtectedRoute
+        path="/admin/tasks/:task_id/exercises/:id/edit"
+        component={AdminDashboard}
+      />
       <ProtectedRoute path="/admin/tasks/:id/edit" component={AdminDashboard} />
-      
     </Switch>
   );
 }
