@@ -196,6 +196,7 @@ export default function ExerciseResults() {
         updateAssignedTaskStatusMutation.mutate();
       }
       updateTaskMutation.mutate({ isActive: false });
+      queryClient.invalidateQueries({ queryKey: [`/api/task_exercises_prog/${progressId}`] });
     } else {
       if (nextExercise?.id)
         navigate(

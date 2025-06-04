@@ -145,10 +145,10 @@ export default function TaskManagement() {
                     {task.name}
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
-                    {task.timeConstraint}
+                    {task.timeConstraint === '00:00:00' ? 'Без ограничений' : task.timeConstraint}
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
-                    {task.triesNumber}
+                    {task.triesNumber === 0 ? 'Без ограничений' : task.triesNumber}
                   </td>
 
                   <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500">

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Exercise, ExerciseProgress, Task, TaskProgress } from "@shared/schema";
 import { CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { navigate } from "wouter/use-browser-location";
-import { format, toZonedTime } from "date-fns-tz";
+
 export default function TaskResults() {
   const { taskId, progressId } = useParams<{
     taskId: string;
@@ -114,7 +114,8 @@ export default function TaskResults() {
           <p className="mx-auto w-fit">
             Задание завершено:{" "}
             {prog.completedAt
-              ? new Date(prog.startedAt).toLocaleString("ru-RU", {
+              ? new Date(prog.completedAt
+              ).toLocaleString("ru-RU", {
                   day: "2-digit",
                   month: "2-digit",
                   year: "numeric",

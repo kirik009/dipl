@@ -632,7 +632,7 @@ export default function UserManagement() {
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={updateUserMutation.isPending}>
-                  {updateUserMutation.isPending ? "Updating..." : "Update User"}
+                  {updateUserMutation.isPending ? "Обновление..." : "Обновить"}
                 </Button>
               </DialogFooter>
             </form>

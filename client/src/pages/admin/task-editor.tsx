@@ -278,7 +278,7 @@ export default function TaskEditor() {
               name="triesNumber"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Количество попыток </FormLabel>
+                  <FormLabel>Количество попыток (Если хотите неограниченное количество попыток, то введите 0) </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -298,7 +298,7 @@ export default function TaskEditor() {
               name="timeConstraint"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Ограничение по времени </FormLabel>
+                  <FormLabel>Ограничение по времени (Если хотите неограниченное время, то введите 00:00:00) </FormLabel>
                   <FormControl>
                     <Input
                       onFocus={handleFocus}
