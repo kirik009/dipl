@@ -178,10 +178,13 @@ export default function ExerciseEditor() {
 
       if (formName == "correctSentence") {
         const words =
-          text
-            .trim()
-            .toLowerCase()
-            .match(/\w+|[^\w\s]+/g) || [];
+          
+  text
+  .trim()
+  .toLowerCase()
+  .replace(/[^\w\s'’]+$/, "")
+  .match(/\b\w+(?:['’]\w+)*\b|[^\w\s'’]/g) || [];
+  console.log(words)
         form.setValue("words", words);
       }
     } catch (err: any) {

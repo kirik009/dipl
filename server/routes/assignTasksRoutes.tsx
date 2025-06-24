@@ -75,7 +75,7 @@ export async function assignTasksRoutes(app: Express) {
       
       const taskId = parseInt(req.params.taskId);
       const userId = parseInt(req.params.userId);
-      const updatedExercise = await storage.solveAssignedTask(taskId, userId);
+      const updatedExercise = await storage.solvAssignedTask(taskId, userId);
       
       if (!updatedExercise) {
         return res.status(404).json({ message: "Assigned task not found" });

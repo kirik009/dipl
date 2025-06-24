@@ -36,8 +36,8 @@ export const exercises = pgTable("exercises", {
 
 export const assignedTasks = pgTable("assigned_tasks", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
-  taskId: integer("task_id").references(() => tasks.id),
+  userId: integer("user_id").references(() => users.id, {onDelete: "cascade"}),
+  taskId: integer("task_id").references(() => tasks.id, {onDelete: "cascade"}),
   assignedBy: integer("assigned_by").references(() => users.id),
   dueDate: timestamp("due_date"),
   assignedAt: timestamp("assigned_at").defaultNow(),
@@ -47,7 +47,7 @@ export const assignedTasks = pgTable("assigned_tasks", {
 export const exerciseProgress = pgTable("exercise_progress", {
   id: serial("id").primaryKey(),
   userId: integer("user_id")
-    .references(() => users.id)
+    .references(() => users.id, {onDelete: "cascade"})
     .notNull(),
   exerciseId: integer("exercise_id").references(() => exercises.id, {onDelete: "cascade"}),
   isCorrect: boolean("is_correct"),
@@ -63,7 +63,7 @@ export const tasks = pgTable("tasks", {
   name: text("name").notNull().unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   createdBy: integer("created_by")
-    .references(() => users.id)
+    .references(() => users.id, {onDelete: "cascade"})
     .notNull(),
   triesNumber: integer("tries_number").notNull(),
   exercisesNumber: integer("exercises_number"),
@@ -72,7 +72,7 @@ export const tasks = pgTable("tasks", {
 
 export const taskProgress = pgTable("task_progress", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").references(() => users.id),
+  userId: integer("user_id").references(() => users.id, {onDelete: "cascade"}),
   taskId: integer("task_id").references(() => tasks.id, {onDelete: "cascade"}),
   correctAnswers: integer("correct_answers"),
   completedAt: timestamp("completed_at"),

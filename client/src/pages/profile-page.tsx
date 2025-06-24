@@ -37,7 +37,7 @@ const profileUpdateSchema = z
     currentPassword: z.string().optional(),
     newPassword: z
       .string()
-      .min(6, "Новый пароль должен содержать не менее 6 букв")
+      
       .optional(),
     confirmNewPassword: z.string().optional(),
   })
@@ -93,7 +93,7 @@ export default function ProfilePage() {
       queryClient.invalidateQueries({ queryKey: ["/api/user"] });
       toast({
         title: "Операция выполнена",
-        description: "Ваш пароль изменен.",
+        description: "Ваш аккаунт успешно обновлен.",
       });
 
       // Clear password fields

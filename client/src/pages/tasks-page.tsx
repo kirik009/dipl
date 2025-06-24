@@ -240,12 +240,7 @@ export default function TasksPage() {
                       </a>
                     )}
 
-                    {/* <a href={`/tasks/${task.id}`}>
-          {activeTab === "all"
-  ? (task as Task & { creatorFullName: string | null }).name
-  : (task as AssingedTask & { taskName: string | null }& { authorName: string | null }).taskName
-  }
-        </a> */}
+                  
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate">
                     {activeTab === "all"
@@ -266,6 +261,8 @@ export default function TasksPage() {
                             day: "numeric",
                             month: "long",
                             year: "numeric",
+                            hour: "numeric",
+                            minute: "numeric",
                           })
                         : "-"}
                     </td>
