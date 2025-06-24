@@ -116,13 +116,13 @@ export async function exerciseRoutes(app: Express) {
             if (!req.isAuthenticated() || !['admin', 'teacher'].includes(req.user.role)) {
               return res.status(403).json({ message: "Not authorized" });
             }
-            
+            console.log(req.body)
             const validatedData = insertExerciseSchema.parse(req.body);
-            
+            console.log(validatedData)
             const exercise = await storage.createExercise({
               ...validatedData,
               createdBy: req.user.id,
-            });
+            }); 
             
             res.status(201).json(exercise);
           } catch (error) {

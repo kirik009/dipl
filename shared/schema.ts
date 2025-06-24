@@ -49,7 +49,7 @@ export const exerciseProgress = pgTable("exercise_progress", {
   userId: integer("user_id")
     .references(() => users.id)
     .notNull(),
-  exerciseId: integer("exercise_id").references(() => exercises.id),
+  exerciseId: integer("exercise_id").references(() => exercises.id, {onDelete: "cascade"}),
   isCorrect: boolean("is_correct"),
   userAnswer: text("user_answer"),
   completedAt: timestamp("completed_at"),
@@ -73,7 +73,7 @@ export const tasks = pgTable("tasks", {
 export const taskProgress = pgTable("task_progress", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id),
-  taskId: integer("task_id").references(() => tasks.id),
+  taskId: integer("task_id").references(() => tasks.id, {onDelete: "cascade"}),
   correctAnswers: integer("correct_answers"),
   completedAt: timestamp("completed_at"),
   startedAt: timestamp("started_at").defaultNow().notNull(),

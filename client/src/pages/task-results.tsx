@@ -114,17 +114,10 @@ export default function TaskResults() {
           <p className="mx-auto w-fit">
             Задание завершено:{" "}
             {prog.completedAt
-              ? new Date(prog.completedAt
-              ).toLocaleString("ru-RU", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                  hour12: false,
-                  timeZone: "UTC",
-                })
+              ? new Date(prog.completedAt)
+              .toLocaleString("ru-RU",
+                )
+
               : "—"}
           </p>
           <p className="mx-auto w-fit">

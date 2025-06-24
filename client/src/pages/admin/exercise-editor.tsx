@@ -34,6 +34,8 @@ import {
   useCreateExerciseMutation,
   useUpdateExerciseMutation,
 } from "@/hooks/use-mutate";
+import { query } from "express";
+import { useAuth } from "@/hooks/use-auth";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   "pdfjs-dist/build/pdf.worker.min.mjs",
@@ -47,6 +49,7 @@ const formSchema = insertExerciseSchema.extend({
 type FormValues = z.infer<typeof formSchema>;
 
 export default function ExerciseEditor() {
+  const { user } = useAuth();
   const { task_id, id } = useParams<{ task_id: string; id: string }>();
   const [, navigate] = useLocation();
   const { toast } = useToast();
@@ -119,6 +122,9 @@ export default function ExerciseEditor() {
     } else {
       createExerciseMutation.mutate(exerciseData);
     }
+    queryClient.invalidateQueries({
+      queryKey: [`/api/new_task_exercises/${user?.id}`],
+    });
   };
 
   const isLoading = isLoadingExercise;
@@ -171,7 +177,11 @@ export default function ExerciseEditor() {
       form.setValue(formName, text.trim());
 
       if (formName == "correctSentence") {
-        const words = text.trim().toLowerCase().split(" ");
+        const words =
+          text
+            .trim()
+            .toLowerCase()
+            .match(/\w+|[^\w\s]+/g) || [];
         form.setValue("words", words);
       }
     } catch (err: any) {

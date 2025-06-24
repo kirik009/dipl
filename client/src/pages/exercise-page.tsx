@@ -74,6 +74,17 @@ useEffect(() => {
 }, [taskProg?.startedAt]);
 
 useEffect(() => {
+  let i = 0;
+  let nextExId = 0
+   exerciseProgs?.forEach((exerciseProg) => {
+    if (exerciseProg.userAnswer !== null) {
+      i++;
+    }
+    else  {
+      nextExId = exerciseProg?.exerciseId!;
+      }
+  })
+  if (i >= parseInt(seq) + 1) navigate( `/tasks/${taskId}/prog/${progressId}/exercises/${nextExId}/seq/${i}`)
   if (taskProg?.exercisesNumber !== exerciseProgs?.length) {
     refetch();
   }
@@ -137,7 +148,16 @@ useEffect(() => {
   // Submit exercise mutation
   const submitMutation = useMutation({
     mutationFn: async () => {
-      const userAnswer = sentence.map(w => w.text).join(" ").toLowerCase().trim();
+      const userAnswer = sentence
+  .map((w, index) => {
+    if (/^[.,:;!?]$/.test(w.text)) {
+      return w.text + ' '; 
+    }
+    return (index > 0 && sentence[index - 1].text !== ',') ? ' ' + w.text : w.text;
+  })
+  .join('')
+  .toLowerCase()
+  .trim();
      const correctAnswer = exercise?.correctSentence.replace(/[!?.]/g, "").toLowerCase().trim();
      if (exerciseProgs) {
     

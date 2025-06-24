@@ -3,6 +3,33 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import './cron/updateAssignedStatus';
 import './cron/updateTaskProgress';
+
+import { storage } from "./storage";
+import * as crypto from "crypto";
+
+// Функция для создания администратора по умолчанию
+async function ensureAdminExists() {
+  try {
+    const allUsers = await storage.getAllUsers();
+    const adminExists = allUsers.some(user => user.role === "admin");
+    
+    if (!adminExists) {
+      log("Администратор не найден. Создаю администратора по умолчанию...");
+      
+      const defaultAdmin = {
+        username: "admin",
+        password: crypto.createHash("sha256").update("admin123").digest("hex"),
+        fullName: "Администратор",
+        role: "admin"
+      };
+      
+      await storage.createUser(defaultAdmin);
+      log("Администратор по умолчанию создан! Логин: admin, Пароль: admin123");
+    }
+  } catch (error) {
+    console.error("Ошибка при проверке/создании администратора:", error);
+  }
+}
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -38,6 +65,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  await ensureAdminExists();
   const server = await registerRoutes(app);
   
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

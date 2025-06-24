@@ -1,4 +1,3 @@
-import { IStorage } from "./storage";
 import connectPg from "connect-pg-simple";
 import session from "express-session";
 import { pool } from "./db";
@@ -9,7 +8,7 @@ import * as exerciseProgressOps from "./database-storage/exerciseProgress";
 import * as taskProgressOps from "./database-storage/taskProgress";
 import * as tasksOps from "./database-storage/tasks";
 import { AssingedTask, TaskProgress } from "@shared/schema";
-export class DatabaseStorage implements IStorage {
+export class DatabaseStorage {
   sessionStore: session.Store;
 
   constructor() {
@@ -27,7 +26,7 @@ export class DatabaseStorage implements IStorage {
   updateAssignedTask = assignedTasksOps.updateAssignedTask;
   createAssignedTask = assignedTasksOps.createAssignedTask;
   deleteAssignedTask= assignedTasksOps.deleteAssignedTask;
-  solveAssignedTask = assignedTasksOps.solvAssignedTask
+  solvAssignedTask = assignedTasksOps.solvAssignedTask
   
   getUser = usersOps.getUser;
   deleteUser = usersOps.deleteUser;
